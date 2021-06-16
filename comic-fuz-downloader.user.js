@@ -9,80 +9,175 @@
 // @require      https://unpkg.com/ajax-hook@2.0.3/dist/ajaxhook.min.js
 // @require      https://unpkg.com/axios/dist/axios.min.js
 // @require      https://unpkg.com/jszip@3.6.0/dist/jszip.min.js
+// @require      https://unpkg.com/jszip-utils@0.1.0/dist/jszip-utils.min.js
+// @require      https://unpkg.com/jszip@3.6.0/vendor/FileSaver.js
+// @require      https://unpkg.com/jquery@3.6.0/dist/jquery.min.js
+// @require      https://code.jquery.com/ui/1.12.0/jquery-ui.min.js
 // @grant        none
 // ==/UserScript==
 
-;(function () {
+(function () {
   'use strict'
+
+  const jq3 = $.noConflict()
+  jq3(document).ready(function($) {
+    const divDownload = $(`
+      <div class="menuField" id="showDownloadMenuField" title="Download">
+        <button id="showDownload">
+          <div></div>
+        </button>
+      </div>
+    `)
+    $('#menu .submenu:first').append(divDownload)
+    $('#showDownload').click(function() {
+      getAllImages().then((images) => {
+        console.log(images)
+        downloadAsZip(images)
+      })
+    })
+  })
+
+  let cid
+  let comicTitle
+  let contentTitle
+  let authInfo
+  let baseUrl
+  let config
 
   ah.proxy({
     onResponse: (response, handler) => {
-      if (response.config.url.indexOf('configuration_pack.json') === -1) {
-        handler.next(response)
-        return
+      if (response.config.url.indexOf('license') > -1) {
+        handleLicense(response)
       }
 
-      const url = new URL(response.config.url)
-      const baseUrl =
-        url.origin +
-        url.pathname.slice(0, url.pathname.lastIndexOf('configuration_pack.json'))
-      const params = {
-        Policy: url.searchParams.get('Policy'),
-        Signature: url.searchParams.get('Signature'),
-        'Key-Pair-Id': url.searchParams.get('Key-Pair-Id'),
+      if (response.config.url.indexOf('advertisement/url') > -1) {
+        handleAdvertisementUrl(response)
       }
-      console.log(baseUrl)
-      console.log(params)
 
-      const data = JSON.parse(response.response)
-      const filePath = data.configuration.contents[0].file
-      const pageLinkInfo = data[filePath].FileLinkInfo.PageLinkInfoList[0]
-      const pagePath = `${filePath}/0`
-      const imageUrl = `${baseUrl}${pagePath}.jpeg`
-      axios.get(imageUrl, {
-          params,
-          responseType: 'arraybuffer',
-      }).then((response) => {
-        const dataUrl = _imageEncode(response.data)
-        const srcCanvas = document.createElement('canvas')
-        const srcContext = srcCanvas.getContext('2d')
-        const srcImage = new Image()
-        srcImage.src = dataUrl
-
-        const canvas = document.createElement('canvas')
-        const context = canvas.getContext("2d")
-        
-        srcImage.onload = () => {
-          const width = srcImage.width
-          const height = srcImage.height
-          srcCanvas.width = width
-          srcCanvas.height = height
-          srcContext.drawImage(srcImage, 0, 0)
-
-          canvas.width = width
-          canvas.height = height
-
-          const pattern = Decoder.calcPattern(pagePath)
-          const mapData = Decoder.decode(width, height, 64, 64, pattern)
-          mapData.forEach(({ srcX, srcY, destX, destY, width, height }) => {
-            const srcData = srcContext.getImageData(destX, destY, width, height)
-            context.putImageData(srcData, srcX, srcY)
-          })
-  
-          // const url = window.URL.createObjectURL(new Blob([response.data]))
-          const link = document.createElement('a')
-          link.href = canvas.toDataURL('image/jpeg', 1)
-          link.setAttribute('download', 'file.jpg')
-          document.body.appendChild(link)
-          link.click()
-        }
-      })
+      if (response.config.url.indexOf('configuration_pack.json') > -1) {
+        handleConfiguration(response)
+      }
 
       handler.next(response)
     },
   })
 
-  function _imageEncode (arrayBuffer) {
+  function handleLicense(response) {
+    const url = new URL(response.config.url)
+    const data = JSON.parse(response.response)
+    cid = url.searchParams.get('cid')
+    authInfo = data.auth_info
+    baseUrl = data.url
+  }
+
+  function handleAdvertisementUrl(response) {
+    const data = JSON.parse(response.response)
+    contentTitle = data.content_title
+  }
+
+  function handleConfiguration(response) {
+    const data = JSON.parse(response.response)
+    config = data
+    comicTitle = _findVal(data, 'Title')
+  }
+
+  function _findVal(object, key) {
+    var value;
+    Object.keys(object).some(function(k) {
+      if (k === key) {
+        value = object[k];
+        return true;
+      }
+      if (object[k] && typeof object[k] === 'object') {
+        value = _findVal(object[k], key);
+        return value !== undefined;
+      }
+    });
+    return value;
+  }
+
+  async function getAllImages() {
+    const images = []
+    config.configuration.contents.forEach(async ({file}) => {
+      for (let i = 0; i < config[file].FileLinkInfo.PageCount; i++) {
+        images.push(getImageAndReorgnize(file, i))
+      }
+    })
+
+    return Promise.all(images)
+  }
+
+  async function getImageAndReorgnize(filePath, index) {
+    const pagePath = `${filePath}/${index}`
+    console.log(pagePath)
+    const srcImage = await getImage(pagePath)
+    const image = await reorgnizeImage(srcImage, pagePath)
+
+    return {
+      name: `${filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'))}-${index}`,
+      data: image
+    }
+  }
+
+  async function getImage(pagePath) {
+    const imageUrl = `${baseUrl}${pagePath}.jpeg`
+    const response = await axios.get(imageUrl, {
+      params: authInfo,
+      responseType: 'arraybuffer',
+    })
+
+    return _imageEncode(response.data)
+  }
+
+  function reorgnizeImage(image, pagePath) {
+    return new Promise((resolve, reject) => {
+      const srcCanvas = document.createElement('canvas')
+      const srcContext = srcCanvas.getContext('2d')
+      const srcImage = new Image()
+      srcImage.src = image
+
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d')
+
+      srcImage.onload = () => {
+        const width = srcImage.width
+        const height = srcImage.height
+        srcCanvas.width = width
+        srcCanvas.height = height
+        srcContext.drawImage(srcImage, 0, 0)
+  
+        canvas.width = width
+        canvas.height = height
+  
+        const pattern = Decoder.calcPattern(pagePath)
+        const mapData = Decoder.decode(width, height, 64, 64, pattern)
+        mapData.forEach(({ srcX, srcY, destX, destY, width, height }) => {
+          const srcData = srcContext.getImageData(destX, destY, width, height)
+          context.putImageData(srcData, srcX, srcY)
+        })
+
+        resolve(canvas.toDataURL('image/jpeg', 1))
+        // const images = {}
+        // images[`${filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'))}-0`] = canvas.toDataURL('image/jpeg', 1)
+      }
+      srcImage.onerror = reject
+    })
+  }
+
+  function downloadAsZip(images) {
+    const zip = new JSZip()
+    zip.file('ComicInfo.txt', `${cid}\n${comicTitle}\n${contentTitle}`)
+    images.forEach(({name, data}) => {
+      zip.file(`${name}.jpg`, data.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''), { base64: true })
+    })
+
+    zip.generateAsync({ type: 'blob' })
+      .then((content) => {
+        saveAs(content, `${cid}.zip`)
+      })
+  }
+
+  function _imageEncode(arrayBuffer) {
     let u8 = new Uint8Array(arrayBuffer)
     let b64encoded = btoa([].reduce.call(new Uint8Array(arrayBuffer),function(p,c){return p+String.fromCharCode(c)},''))
     let mimetype="image/jpeg"
