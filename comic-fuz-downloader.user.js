@@ -8,6 +8,7 @@
 // @run-at       document-start
 // @require      https://unpkg.com/ajax-hook@2.0.3/dist/ajaxhook.min.js
 // @require      https://unpkg.com/axios/dist/axios.min.js
+// @require      https://unpkg.com/jszip@3.6.0/dist/jszip.min.js
 // @grant        none
 // ==/UserScript==
 
@@ -40,29 +41,62 @@
       const imageUrl = `${baseUrl}${pagePath}.jpeg`
       axios.get(imageUrl, {
           params,
-          responseType: 'blob',
-        }).then((response) => {
-          const url = window.URL.createObjectURL(new Blob([response.data]))
+          responseType: 'arraybuffer',
+      }).then((response) => {
+        const dataUrl = _imageEncode(response.data)
+        const srcCanvas = document.createElement('canvas')
+        const srcContext = srcCanvas.getContext('2d')
+        const srcImage = new Image()
+        srcImage.src = dataUrl
+
+        const canvas = document.createElement('canvas')
+        const context = canvas.getContext("2d")
+        
+        srcImage.onload = () => {
+          const width = srcImage.width
+          const height = srcImage.height
+          srcCanvas.width = width
+          srcCanvas.height = height
+          srcContext.drawImage(srcImage, 0, 0)
+
+          canvas.width = width
+          canvas.height = height
+
+          const pattern = Decoder.calcPattern(pagePath)
+          const mapData = Decoder.decode(width, height, 64, 64, pattern)
+          mapData.forEach(({ srcX, srcY, destX, destY, width, height }) => {
+            const srcData = srcContext.getImageData(destX, destY, width, height)
+            context.putImageData(srcData, srcX, srcY)
+          })
+  
+          // const url = window.URL.createObjectURL(new Blob([response.data]))
           const link = document.createElement('a')
-          link.href = url
+          link.href = canvas.toDataURL('image/jpeg', 1)
           link.setAttribute('download', 'file.jpg')
           document.body.appendChild(link)
           link.click()
-        })
+        }
+      })
 
       handler.next(response)
     },
   })
 
-  function calcPattern(str) {
-    let n = 0
-    str.split('').forEach((char) => {
-      n += char.charCodeAt(0)
-    })
-    return (n % 4) + 1
+  function _imageEncode (arrayBuffer) {
+    let u8 = new Uint8Array(arrayBuffer)
+    let b64encoded = btoa([].reduce.call(new Uint8Array(arrayBuffer),function(p,c){return p+String.fromCharCode(c)},''))
+    let mimetype="image/jpeg"
+    return "data:"+mimetype+";base64,"+b64encoded
   }
 
   const Decoder = {
+    calcPattern: function(str) {
+      let n = 0
+      str.split('').forEach((char) => {
+        n += char.charCodeAt(0)
+      })
+      return (n % 4) + 1
+    },
     decode: function (e, t, r, i, n) {
       var s,a,o,u,c,p,l,m,d,h,y = Math.floor(e / r),g = Math.floor(t / i),f = e % r,b = t % i,S = []
       if (
