@@ -7,7 +7,6 @@
 // @match        https://comic-fuz.com/viewer.html*
 // @run-at       document-start
 // @require      https://unpkg.com/ajax-hook@2.0.3/dist/ajaxhook.min.js
-// @require      https://unpkg.com/axios/dist/axios.min.js
 // @require      https://unpkg.com/jszip@3.6.0/dist/jszip.min.js
 // @require      https://unpkg.com/jszip-utils@0.1.0/dist/jszip-utils.min.js
 // @require      https://unpkg.com/jszip@3.6.0/vendor/FileSaver.js
@@ -114,7 +113,7 @@
 
   async function getImageAndReorgnize(filePath, index) {
     const pagePath = `${filePath}/${index}`
-    const srcImage = await getImage(pagePath)
+    const srcImage = constructImageUrl(pagePath)
     const image = await reorgnizeImage(srcImage, pagePath)
 
     return {
@@ -123,14 +122,10 @@
     }
   }
 
-  async function getImage(pagePath) {
+  function constructImageUrl(pagePath) {
     const imageUrl = `${baseUrl}${pagePath}.jpeg`
-    const response = await axios.get(imageUrl, {
-      params: authInfo,
-      responseType: 'arraybuffer',
-    })
-
-    return _imageEncode(response.data)
+    const params = $.param(authInfo)
+    return `${imageUrl}?${params}&_`
   }
 
   function reorgnizeImage(image, pagePath) {
@@ -139,6 +134,7 @@
       const srcContext = srcCanvas.getContext('2d')
       const srcImage = new Image()
       srcImage.src = image
+      srcImage.crossOrigin = 'Anonymous'
 
       const canvas = document.createElement('canvas')
       const context = canvas.getContext('2d')
