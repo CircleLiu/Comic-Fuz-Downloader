@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.1.1-ALPHA
+// @version           0.1.2
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 
@@ -119,12 +119,21 @@
   async function getImageAndReorgnize(filePath, index) {
     const pagePath = `${filePath}/${index}`
     const srcImage = constructImageUrl(pagePath)
-    const image = await reorgnizeImage(srcImage, pagePath)
+    const canvas = await reorgnizeImage(srcImage, filePath, index)
+    const image = await getCanvasBlob(canvas)
 
     return {
       name: `${filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'))}-${index}`,
       data: image
     }
+  }
+
+  function getCanvasBlob(canvas) {
+    return new Promise(function(resolve, reject) {
+      canvas.toBlob(function(blob) {
+        resolve(blob)
+      }, 'image/jpeg', 1)
+    })
   }
 
   function constructImageUrl(pagePath) {
@@ -133,7 +142,7 @@
     return `${imageUrl}?${params}&_`
   }
 
-  function reorgnizeImage(image, pagePath) {
+  function reorgnizeImage(image, filePath, index) {
     return new Promise((resolve, reject) => {
       const srcCanvas = document.createElement('canvas')
       const srcContext = srcCanvas.getContext('2d')
@@ -151,9 +160,10 @@
         srcCanvas.height = height
         srcContext.drawImage(srcImage, 0, 0)
   
-        canvas.width = width
-        canvas.height = height
+        canvas.width = config[filePath].FileLinkInfo.PageLinkInfoList[index].Page.Size.Width
+        canvas.height = config[filePath].FileLinkInfo.PageLinkInfoList[index].Page.Size.Height
   
+        const pagePath = `${filePath}/${index}`
         const pattern = Decoder.calcPattern(pagePath)
         const mapData = Decoder.decode(width, height, 64, 64, pattern)
         mapData.forEach(({ srcX, srcY, destX, destY, width, height }) => {
@@ -161,9 +171,7 @@
           context.putImageData(srcData, srcX, srcY)
         })
 
-        resolve(canvas.toDataURL('image/jpeg', 1))
-        // const images = {}
-        // images[`${filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'))}-0`] = canvas.toDataURL('image/jpeg', 1)
+        resolve(canvas)
       }
       srcImage.onerror = reject
     })
@@ -173,18 +181,11 @@
     const zip = new JSZip()
     zip.file('ComicInfo.txt', `${cid}\n${comicTitle}\n${contentTitle}`)
     images.forEach(({name, data}) => {
-      zip.file(`${name}.jpg`, data.replace(/^data:image\/(png|jpg|jpeg);base64,/, ''), { base64: true })
+      zip.file(`${name}.jpg`, data)
     })
 
     const content = await zip.generateAsync({ type: 'blob' })
     saveAs(content, `${cid}.zip`)
-  }
-
-  function _imageEncode(arrayBuffer) {
-    let u8 = new Uint8Array(arrayBuffer)
-    let b64encoded = btoa([].reduce.call(new Uint8Array(arrayBuffer),function(p,c){return p+String.fromCharCode(c)},''))
-    let mimetype="image/jpeg"
-    return "data:"+mimetype+";base64,"+b64encoded
   }
 
   const Decoder = {
