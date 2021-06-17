@@ -1,17 +1,23 @@
 // ==UserScript==
-// @name         Comic Fuz Downloader
-// @namespace    http://circleliu.cn
-// @version      0.1.0-ALPHA
-// @description  Userscript for download comics on Comic Fuz
-// @author       Circle
-// @match        https://comic-fuz.com/viewer.html*
-// @run-at       document-start
-// @require      https://unpkg.com/ajax-hook@2.0.3/dist/ajaxhook.min.js
-// @require      https://unpkg.com/jszip@3.6.0/dist/jszip.min.js
-// @require      https://unpkg.com/jszip-utils@0.1.0/dist/jszip-utils.min.js
-// @require      https://unpkg.com/jszip@3.6.0/vendor/FileSaver.js
-// @require      https://unpkg.com/jquery@3.6.0/dist/jquery.min.js
-// @grant        none
+// @name              Comic Fuz Downloader
+// @namespace         http://circleliu.cn
+// @version           0.1.1-ALPHA
+// @description       Userscript for download comics on Comic Fuz
+// @author            Circle
+
+// @match             https://comic-fuz.com/viewer.html*
+// @run-at            document-start
+// @grant             none
+
+// @require           https://unpkg.com/ajax-hook@2.0.3/dist/ajaxhook.min.js
+// @require           https://unpkg.com/jszip@3.6.0/dist/jszip.min.js
+// @require           https://unpkg.com/jszip-utils@0.1.0/dist/jszip-utils.min.js
+// @require           https://unpkg.com/jszip@3.6.0/vendor/FileSaver.js
+// @require           https://unpkg.com/jquery@3.6.0/dist/jquery.min.js
+
+// @homepageURL       https://circleliu.github.io/Comic-Fuz-Downloader/
+// @supportURL        https://github.com/CircleLiu/Comic-Fuz-Downloader
+// @updateURL         https://circleliu.github.io/Comic-Fuz-Downloader/comic-fuz-downloader.user.js
 // ==/UserScript==
 
 (function () {

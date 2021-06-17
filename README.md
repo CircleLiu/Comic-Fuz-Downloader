@@ -18,7 +18,11 @@
 ## 使用方法
 
 1. 打开Comic Fuz漫画阅读器
+
 2. 点击插件在阅读器菜单左上角中加入的下载按钮
-   ![Download Button](https://circleliu.github.io/Comic-Fuz-Downloader/imgs/download.png)
-3. 等待加载打包（如果页数较多会耗时较长）
+
+    ![Download Button](https://circleliu.github.io/Comic-Fuz-Downloader/imgs/download.png)
+
+3. 等待加载打包（如果页数较多会耗时较长，但因为是异步的所以你可以边看边等）
+
 4. 打包完成后会弹出下载窗口
