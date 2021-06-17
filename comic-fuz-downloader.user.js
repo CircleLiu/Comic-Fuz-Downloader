@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comic Fuz Downloader
 // @namespace    http://circleliu.cn
-// @version      0.1
+// @version      0.1.0-ALPHA
 // @description  Userscript for download comics on Comic Fuz
 // @author       Circle
 // @match        https://comic-fuz.com/viewer.html*
@@ -11,7 +11,6 @@
 // @require      https://unpkg.com/jszip-utils@0.1.0/dist/jszip-utils.min.js
 // @require      https://unpkg.com/jszip@3.6.0/vendor/FileSaver.js
 // @require      https://unpkg.com/jquery@3.6.0/dist/jquery.min.js
-// @require      https://code.jquery.com/ui/1.12.0/jquery-ui.min.js
 // @grant        none
 // ==/UserScript==
 
