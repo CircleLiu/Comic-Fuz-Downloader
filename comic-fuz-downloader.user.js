@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.1.2
+// @version           0.2.0
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 
@@ -28,23 +28,56 @@
     const divDownload = $(`
       <div class="menuField" id="showDownloadMenuField" title="Download">
         <button id="showDownload">
-          <div></div>
+          <div id="downloadProgress"></div>
         </button>
       </div>
     `)
     const downloadIcon = 'url("https://circleliu.github.io/Comic-Fuz-Downloader/icons/download.png")'
     const loadingIcon = 'url("https://circleliu.github.io/Comic-Fuz-Downloader/icons/loading.gif")'
     $('#menu .submenu:first').append(divDownload)
-    $('#showDownload').css('background-image', downloadIcon)
-    $('#showDownload').css('background-repeat', 'no-repeat')
-    $('#showDownload').css('background-size', 'contain')
+    setIconReady()
+    
+    
     $('#showDownload').click(async function() {
-      $('#showDownload').css('background-image', loadingIcon)
-      const images = await getAllImages()
-      await downloadAsZip(images)
-      $('#showDownload').css('background-image', downloadIcon)
+      setIconDownloading()
+      console.time('download')
+      await downloadAsZip()
+      console.timeEnd('download')
+      setIconReady()
     })
+
+    function setIconReady() {
+      $('#showDownload').css({
+        'background-image': downloadIcon,
+        'background-repeat': 'no-repeat',
+        'background-size': 'contain',
+        'color': 'white',
+        'font-size': '8px',
+        'text-align': 'left',
+      })
+      $('#downloadProgress').text('')
+    }
+
+    function setIconDownloading() {
+      $('#showDownload').css({
+        'background-image': loadingIcon,
+        'background-size': '50%',
+      })
+      $('#downloadProgress').css({
+        'margin-top': '20px',
+      })
+    }
   })
+
+  let progressDownloaded = 0
+  let progressAll = 0
+  function updateDownloadProgress(text) {
+    if (text) {
+      jq3('#downloadProgress').text(text)
+    } else {
+      jq3('#downloadProgress').text(`${progressDownloaded}/${progressAll}`)
+    }
+  }
 
   let cid
   let comicTitle
@@ -105,15 +138,23 @@
     return value;
   }
 
-  async function getAllImages() {
-    const images = []
+  async function getAllImagesToZip(zip) {
+    const promises = []
+    progressDownloaded = 0
     config.configuration.contents.forEach(async ({file}) => {
       for (let i = 0; i < config[file].FileLinkInfo.PageCount; i++) {
-        images.push(getImageAndReorgnize(file, i))
+        promises.push(getImageToZip(file, i, zip))
       }
     })
+    progressAll = promises.length
+    return Promise.all(promises)
+  }
 
-    return Promise.all(images)
+  async function getImageToZip(filePath, index, zip) {
+    const { name, data } = await getImageAndReorgnize(filePath, index)
+    progressDownloaded += 1
+    zip.file(`${name}.jpg`, data)
+    updateDownloadProgress()
   }
 
   async function getImageAndReorgnize(filePath, index) {
@@ -177,14 +218,14 @@
     })
   }
 
-  async function downloadAsZip(images) {
+  async function downloadAsZip() {
     const zip = new JSZip()
     zip.file('ComicInfo.txt', `${cid}\n${comicTitle}\n${contentTitle}`)
-    images.forEach(({name, data}) => {
-      zip.file(`${name}.jpg`, data)
-    })
+    await getAllImagesToZip(zip)
 
+    updateDownloadProgress('Generating ZIP')
     const content = await zip.generateAsync({ type: 'blob' })
+    updateDownloadProgress('Complete')
     saveAs(content, `${cid}.zip`)
   }
 
