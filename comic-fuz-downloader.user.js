@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.2.0
+// @version           0.2.1
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 
@@ -75,7 +75,7 @@
     if (text) {
       jq3('#downloadProgress').text(text)
     } else {
-      jq3('#downloadProgress').text(`${progressDownloaded}/${progressAll}`)
+      jq3('#downloadProgress').text(`Loading: ${progressDownloaded}/${progressAll}`)
     }
   }
 
@@ -223,9 +223,9 @@
     zip.file('ComicInfo.txt', `${cid}\n${comicTitle}\n${contentTitle}`)
     await getAllImagesToZip(zip)
 
-    updateDownloadProgress('Generating ZIP')
-    const content = await zip.generateAsync({ type: 'blob' })
-    updateDownloadProgress('Complete')
+    const content = await zip.generateAsync({ type: 'blob' }, ({ percent }) => {
+      updateDownloadProgress(`Packaging: ${percent.toFixed(2)}%`)
+    })
     saveAs(content, `${cid}.zip`)
   }
 
