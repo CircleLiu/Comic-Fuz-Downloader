@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.2.1
+// @version           0.2.2
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 
@@ -67,7 +67,13 @@
         'margin-top': '20px',
       })
     }
+
+    // $(window).load(() => {
+    //   contentTitle = $('#pagetitle .titleText:first').text()
+    // })
   })
+
+  
 
   let progressDownloaded = 0
   let progressAll = 0
@@ -92,10 +98,6 @@
         handleLicense(response)
       }
 
-      if (response.config.url.indexOf('advertisement/url') > -1) {
-        handleAdvertisementUrl(response)
-      }
-
       if (response.config.url.indexOf('configuration_pack.json') > -1) {
         handleConfiguration(response)
       }
@@ -110,11 +112,6 @@
     cid = url.searchParams.get('cid')
     authInfo = data.auth_info
     baseUrl = data.url
-  }
-
-  function handleAdvertisementUrl(response) {
-    const data = JSON.parse(response.response)
-    contentTitle = data.content_title
   }
 
   function handleConfiguration(response) {
@@ -218,7 +215,12 @@
     })
   }
 
+  function getMetadata() {
+    contentTitle = jq3('#pagetitle .titleText:first').text()
+  }
+
   async function downloadAsZip() {
+    getMetadata()
     const zip = new JSZip()
     zip.file('ComicInfo.txt', `${cid}\n${comicTitle}\n${contentTitle}`)
     await getAllImagesToZip(zip)
@@ -226,7 +228,7 @@
     const content = await zip.generateAsync({ type: 'blob' }, ({ percent }) => {
       updateDownloadProgress(`Packaging: ${percent.toFixed(2)}%`)
     })
-    saveAs(content, `${cid}.zip`)
+    saveAs(content, `${contentTitle}.zip`)
   }
 
   const Decoder = {

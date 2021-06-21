@@ -31,6 +31,18 @@
 
 ## 变更日志
 
+### 0.2.2 (2021/6/21)
+
+#### Features
+
+- 文件名改为Content Title
+
+#### BUG
+
+- 修复了ComicInfo中的Content Title为空的问题
+
+
+
 ### 0.2.1 (2021/6/19)
 
 #### Features
