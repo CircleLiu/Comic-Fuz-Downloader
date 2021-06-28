@@ -4,16 +4,9 @@
 
 （只能下载免费、已购买的，能看到多少页就能下多少页，看不了的同样下不了
 
-## 安装方法
+## 安装地址
 
-1. 安装扩展程序（如果已经安装请跳过）
-    * Chrome 浏览器需要安装 [TamperMonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) 扩展程序。
-    * Firefox 浏览器需要安装 [GreaseMonkey](https://addons.mozilla.org/zh-CN/firefox/addon/greasemonkey/) 附加组件。
-    * Opera 浏览器需要安装 [TamperMonkey Beta](https://addons.opera.com/zh-cn/extensions/details/tampermonkey-beta/) 扩展。
-    * Safari 浏览器需要安装 [TamperMonkey](http://tampermonkey.net/index.php?ext=dhdg&browser=safari) 扩展。
-
-
-2. [点击这里安装脚本](https://circleliu.github.io/Comic-Fuz-Downloader/comic-fuz-downloader.user.js).
+- GreasyFork: [Comic Fuz Downloader](https://greasyfork.org/scripts/428281)
 
 ## 使用方法
 
@@ -28,6 +21,17 @@
 4. 打包完成后会弹出下载窗口
 
 
+
+## 手动安装步骤
+
+1. 安装扩展程序（如果已经安装请跳过）
+   * Chrome 浏览器需要安装 [TamperMonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) 扩展程序。
+   * Firefox 浏览器需要安装 [GreaseMonkey](https://addons.mozilla.org/zh-CN/firefox/addon/greasemonkey/) 附加组件。
+   * Opera 浏览器需要安装 [TamperMonkey Beta](https://addons.opera.com/zh-cn/extensions/details/tampermonkey-beta/) 扩展。
+   * Safari 浏览器需要安装 [TamperMonkey](http://tampermonkey.net/index.php?ext=dhdg&browser=safari) 扩展。
+
+
+2. [点击这里安装脚本](https://circleliu.github.io/Comic-Fuz-Downloader/comic-fuz-downloader.user.js).
 
 ## 变更日志
 
