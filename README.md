@@ -1,4 +1,5 @@
 # Comic Fuz Downloader
+# 由于Comic Fuz更新了UI和加密方式，项目暂时失效，正在更新。。。
 
 用于从Comic Fuz阅读器，将漫画打包为zip下载。
 
