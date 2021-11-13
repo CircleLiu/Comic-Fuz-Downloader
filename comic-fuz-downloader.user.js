@@ -16,9 +16,9 @@
 // @require           https://unpkg.com/jszip-utils@0.1.0/dist/jszip-utils.min.js
 // @require           https://unpkg.com/jszip@3.6.0/vendor/FileSaver.js
 // @require           https://unpkg.com/jquery@3.6.0/dist/jquery.min.js
-// @require           https://cdn.rawgit.com/dcodeIO/protobuf.js/6.11.2/dist/protobuf.min.js
+// @require           https://cdn.jsdelivr.net/npm/protobufjs@6.11.2/dist/protobuf.min.js
 
-// @require           https://circleliu.github.io/Comic-Fuz-Downloader/resources/messages.js
+// @require           https://greasyfork.org/scripts/435461-comic-fuz-downloader-protobuf-message/code/Comic%20Fuz%20Downloader%20Protobuf%20Message.js?version=987894
 
 // @homepageURL       https://circleliu.github.io/Comic-Fuz-Downloader/
 // @supportURL        https://github.com/CircleLiu/Comic-Fuz-Downloader
