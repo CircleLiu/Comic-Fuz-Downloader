@@ -4,339 +4,197 @@
 // @version           0.2.2
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
-
-// @match             https://comic-fuz.com/viewer.html*
+// @match             https://comic-fuz.com/book/viewer*
+// @match             https://comic-fuz.com/magazine/viewer*
+// @match             https://comic-fuz.com/manga/viewer*
 // @run-at            document-start
 // @grant             none
 
-// @require           https://unpkg.com/ajax-hook@2.0.3/dist/ajaxhook.min.js
+// @require           https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js
+// @require           https://unpkg.com/axios/dist/axios.min.js
 // @require           https://unpkg.com/jszip@3.6.0/dist/jszip.min.js
 // @require           https://unpkg.com/jszip-utils@0.1.0/dist/jszip-utils.min.js
 // @require           https://unpkg.com/jszip@3.6.0/vendor/FileSaver.js
 // @require           https://unpkg.com/jquery@3.6.0/dist/jquery.min.js
+// @require           https://cdn.rawgit.com/dcodeIO/protobuf.js/6.11.2/dist/protobuf.min.js
+
+// @require           https://circleliu.github.io/Comic-Fuz-Downloader/resources/messages.js
 
 // @homepageURL       https://circleliu.github.io/Comic-Fuz-Downloader/
 // @supportURL        https://github.com/CircleLiu/Comic-Fuz-Downloader
 // @updateURL         https://circleliu.github.io/Comic-Fuz-Downloader/comic-fuz-downloader.user.js
 // ==/UserScript==
 
-(function () {
+;(function () {
   'use strict'
 
-  const jq3 = $.noConflict()
-  jq3(document).ready(($) => {
+  const api = getApi()
+
+  const imgBaseUrl = 'https://img.comic-fuz.com'
+  const responseDecoder = {
+    'book_viewer_2': api.v1.BookViewer2Response,
+    'book_viewer': api.v1.BookViewer2Response,
+    'magazine_viewer_2': api.v1.MagazineViewer2Response,
+    'magazine_viewer': api.v1.MagazineViewerResponse,
+    'manga_viewer': api.v1.MangaViewerResponse,
+  }
+  
+  const oldFetch = window.fetch
+  window.fetch = async (input, options) => {
+    const response = await oldFetch(input, options)
+
+    for (const i in responseDecoder) {
+      if (input.indexOf(i) > -1) {
+        const resClone = response.clone()
+        decodeResponse(resClone, responseDecoder[i])
+        break;
+      }
+    }
+    
+    return response
+  }
+
+  let metadata
+  async function decodeResponse(response, decoder) {
+    const data = await response.arrayBuffer()
+    const res = decoder.decode(new Uint8Array(data))
+    metadata = res
+  }
+
+  
+
+  async function decryptImage({imageUrl, encryptionKey, iv}) {
+    const res = await axios.get(imgBaseUrl + imageUrl, {
+      responseType: 'arraybuffer',
+    })
+    const cipherParams = CryptoJS.lib.CipherParams.create({
+      ciphertext: CryptoJS.lib.WordArray.create(res.data)
+    })
+    const key = CryptoJS.enc.Hex.parse(encryptionKey)
+    const _iv = CryptoJS.enc.Hex.parse(iv)
+    const dcWordArray = CryptoJS.AES.decrypt(cipherParams, key, {
+      iv: _iv,
+      mode: CryptoJS.mode.CBC,
+    })
+    return dcWordArray.toString(CryptoJS.enc.Base64)
+  }
+  
+  $(document).ready($ => {
+    const downloadIcon = 'https://circleliu.github.io/Comic-Fuz-Downloader/icons/download.png'
+    const loadingIcon = 'https://circleliu.github.io/Comic-Fuz-Downloader/icons/loading.gif'
+    // const downloadIcon = 'http://localhost:5000/icons/download.png'
+    // const loadingIcon = 'http://localhost:5000/icons/loading.gif'
     const divDownload = $(`
-      <div class="menuField" id="showDownloadMenuField" title="Download">
-        <button id="showDownload">
-          <div id="downloadProgress"></div>
-        </button>
+      <div id="downloader">
+        <img id="downloaderIcon" src="${downloadIcon}">
+        <img id="downloadingIcon" src="${loadingIcon}">
+        <span id="downloaderText">Initializing</span>
       </div>
     `)
-    const downloadIcon = 'url("https://circleliu.github.io/Comic-Fuz-Downloader/icons/download.png")'
-    const loadingIcon = 'url("https://circleliu.github.io/Comic-Fuz-Downloader/icons/loading.gif")'
-    $('#menu .submenu:first').append(divDownload)
-    setIconReady()
-    
-    
-    $('#showDownload').click(async function() {
-      setIconDownloading()
-      console.time('download')
-      await downloadAsZip()
-      console.timeEnd('download')
-      setIconReady()
+    divDownload.css({
+      'grid-area': 'hoge',
+      color: '#2c3438',
+      width: 'fit-content',
+    })
+    divDownload.on('click', async () => {
+      setDownloaderBusy()
+      try {
+        await downloadAsZip()
+        setDownloaderReady()
+      } catch (error) {
+        console.error(error)
+        setDownloaderReady()
+        setText('Download Failed!')
+      }
     })
 
-    function setIconReady() {
-      $('#showDownload').css({
-        'background-image': downloadIcon,
-        'background-repeat': 'no-repeat',
-        'background-size': 'contain',
-        'color': 'white',
-        'font-size': '8px',
-        'text-align': 'left',
-      })
-      $('#downloadProgress').text('')
+    function setDownloaderReady() {
+      $('#downloaderIcon').show()
+      $('#downloadingIcon').hide()
+      setText('Download')
     }
 
-    function setIconDownloading() {
-      $('#showDownload').css({
-        'background-image': loadingIcon,
-        'background-size': '50%',
-      })
-      $('#downloadProgress').css({
-        'margin-top': '20px',
-      })
+    function setDownloaderBusy() {
+      $('#downloaderIcon').hide()
+      $('#downloadingIcon').show()
     }
 
-    // $(window).load(() => {
-    //   contentTitle = $('#pagetitle .titleText:first').text()
-    // })
+    function setText(text) {
+      $('#downloaderText').text(text)
+    }
+
+    function updateDownloadProgress(progress) {
+      setText(`Loading: ${progress.done}/${progress.total}`)
+    }
+
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+    const maxRetry = 10
+    ;(async () => {
+      for (let i = 0; i < maxRetry; ++i) {
+        if ($('.ViewerFooter_footer__3E55F').length) {
+          $('.ViewerFooter_footer__3E55F:first').append(divDownload)
+          setDownloaderReady()
+          break
+        } else {
+          await delay(500)
+        }
+      }
+    })()
+
+    async function downloadAsZip() {
+      if (!metadata) {
+        setText('Failed to load data!')
+        return
+      }
+
+      const zipName = getNameFromMetadata()
+      const zip = new JSZip()
+      if (metadata.tableOfContents){
+        zip.file('TableOfContents.txt', JSON.stringify(metadata.tableOfContents, null, '  '))
+      }
+
+      const progress = {
+        total: 0,
+        done: 0,
+      }
+      const promises = metadata.pages.map(({image}) => {
+        if (image){
+          progress.total++
+          return getImageToZip(image, zip, progress)
+        }
+      })
+      await Promise.all(promises)
+
+      const content = await zip.generateAsync({ type: 'blob' }, ({ percent }) => {
+        setText(`Packaging: ${percent.toFixed(2)}%`)
+      })
+      saveAs(content, `${zipName}.zip`)
+    }
+
+    function getNameFromMetadata() {
+      if (metadata.bookIssue) {
+        return metadata.bookIssue.bookIssueName
+      } else if (metadata.viewerTitle) {
+        return metadata.viewerTitle
+      } else if (metadata.magazineIssue) {
+        return metadata.magazineIssue.magazineName + metadata.magazineIssue.magazineIssueName
+      }
+    }
+
+    async function getImageToZip(image, zip, progress) {
+      const fileName = image.imageUrl.slice(image.imageUrl.lastIndexOf('/') + 1, image.imageUrl.indexOf('?')).replace('.enc', '')
+      const imageData = await decryptImage(image)
+      addImageToZip(fileName, imageData, zip)
+      if (progress) {
+        progress.done++
+        updateDownloadProgress(progress)
+      }
+    }
+  
+    function addImageToZip(name, base64Data, zip) {
+      zip.file(name, base64Data, {
+        base64: true,
+      })
+    }
   })
-
-  
-
-  let progressDownloaded = 0
-  let progressAll = 0
-  function updateDownloadProgress(text) {
-    if (text) {
-      jq3('#downloadProgress').text(text)
-    } else {
-      jq3('#downloadProgress').text(`Loading: ${progressDownloaded}/${progressAll}`)
-    }
-  }
-
-  let cid
-  let comicTitle
-  let contentTitle
-  let authInfo
-  let baseUrl
-  let config
-
-  ah.proxy({
-    onResponse: (response, handler) => {
-      if (response.config.url.indexOf('license') > -1) {
-        handleLicense(response)
-      }
-
-      if (response.config.url.indexOf('configuration_pack.json') > -1) {
-        handleConfiguration(response)
-      }
-
-      handler.next(response)
-    },
-  })
-
-  function handleLicense(response) {
-    const url = new URL(response.config.url)
-    const data = JSON.parse(response.response)
-    cid = url.searchParams.get('cid')
-    authInfo = data.auth_info
-    baseUrl = data.url
-  }
-
-  function handleConfiguration(response) {
-    const data = JSON.parse(response.response)
-    config = data
-    comicTitle = _findVal(data, 'Title')
-  }
-
-  function _findVal(object, key) {
-    var value;
-    Object.keys(object).some(function(k) {
-      if (k === key) {
-        value = object[k];
-        return true;
-      }
-      if (object[k] && typeof object[k] === 'object') {
-        value = _findVal(object[k], key);
-        return value !== undefined;
-      }
-    });
-    return value;
-  }
-
-  async function getAllImagesToZip(zip) {
-    const promises = []
-    progressDownloaded = 0
-    config.configuration.contents.forEach(async ({file}) => {
-      for (let i = 0; i < config[file].FileLinkInfo.PageCount; i++) {
-        promises.push(getImageToZip(file, i, zip))
-      }
-    })
-    progressAll = promises.length
-    return Promise.all(promises)
-  }
-
-  async function getImageToZip(filePath, index, zip) {
-    const { name, data } = await getImageAndReorgnize(filePath, index)
-    progressDownloaded += 1
-    zip.file(`${name}.jpg`, data)
-    updateDownloadProgress()
-  }
-
-  async function getImageAndReorgnize(filePath, index) {
-    const pagePath = `${filePath}/${index}`
-    const srcImage = constructImageUrl(pagePath)
-    const canvas = await reorgnizeImage(srcImage, filePath, index)
-    const image = await getCanvasBlob(canvas)
-
-    return {
-      name: `${filePath.slice(filePath.lastIndexOf('/') + 1, filePath.lastIndexOf('.'))}-${index}`,
-      data: image
-    }
-  }
-
-  function getCanvasBlob(canvas) {
-    return new Promise(function(resolve, reject) {
-      canvas.toBlob(function(blob) {
-        resolve(blob)
-      }, 'image/jpeg', 1)
-    })
-  }
-
-  function constructImageUrl(pagePath) {
-    const imageUrl = `${baseUrl}${pagePath}.jpeg`
-    const params = $.param(authInfo)
-    return `${imageUrl}?${params}&_`
-  }
-
-  function reorgnizeImage(image, filePath, index) {
-    return new Promise((resolve, reject) => {
-      const srcCanvas = document.createElement('canvas')
-      const srcContext = srcCanvas.getContext('2d')
-      const srcImage = new Image()
-      srcImage.src = image
-      srcImage.crossOrigin = 'Anonymous'
-
-      const canvas = document.createElement('canvas')
-      const context = canvas.getContext('2d')
-
-      srcImage.onload = () => {
-        const width = srcImage.width
-        const height = srcImage.height
-        srcCanvas.width = width
-        srcCanvas.height = height
-        srcContext.drawImage(srcImage, 0, 0)
-  
-        canvas.width = config[filePath].FileLinkInfo.PageLinkInfoList[index].Page.Size.Width
-        canvas.height = config[filePath].FileLinkInfo.PageLinkInfoList[index].Page.Size.Height
-  
-        const pagePath = `${filePath}/${index}`
-        const pattern = Decoder.calcPattern(pagePath)
-        const mapData = Decoder.decode(width, height, 64, 64, pattern)
-        mapData.forEach(({ srcX, srcY, destX, destY, width, height }) => {
-          const srcData = srcContext.getImageData(destX, destY, width, height)
-          context.putImageData(srcData, srcX, srcY)
-        })
-
-        resolve(canvas)
-      }
-      srcImage.onerror = reject
-    })
-  }
-
-  function getMetadata() {
-    contentTitle = jq3('#pagetitle .titleText:first').text()
-  }
-
-  async function downloadAsZip() {
-    getMetadata()
-    const zip = new JSZip()
-    zip.file('ComicInfo.txt', `${cid}\n${comicTitle}\n${contentTitle}`)
-    await getAllImagesToZip(zip)
-
-    const content = await zip.generateAsync({ type: 'blob' }, ({ percent }) => {
-      updateDownloadProgress(`Packaging: ${percent.toFixed(2)}%`)
-    })
-    saveAs(content, `${contentTitle}.zip`)
-  }
-
-  const Decoder = {
-    calcPattern: function(str) {
-      let n = 0
-      str.split('').forEach((char) => {
-        n += char.charCodeAt(0)
-      })
-      return (n % 4) + 1
-    },
-    decode: function (e, t, r, i, n) {
-      var s,a,o,u,c,p,l,m,d,h,y = Math.floor(e / r),g = Math.floor(t / i),f = e % r,b = t % i,S = []
-      if (
-        ((s = y - ((43 * n) % y)),
-        (s = s % y == 0 ? (y - 4) % y : s),
-        (s = 0 == s ? y - 1 : s),
-        (a = g - ((47 * n) % g)),
-        (a = a % g == 0 ? (g - 4) % g : a),
-        (a = 0 == a ? g - 1 : a),
-        f > 0 &&
-          b > 0 &&
-          ((o = s * r),
-          (u = a * i),
-          S.push({
-            srcX: o,
-            srcY: u,
-            destX: o,
-            destY: u,
-            width: f,
-            height: b,
-          })),
-        b > 0)
-      )
-        for (l = 0; l < y; l++)
-          (d = this.calcXCoordinateXRest_(l, y, n)),
-            (h = this.calcYCoordinateXRest_(d, s, a, g, n)),
-            (c = this.calcPositionWithRest_(d, s, f, r)),
-            (p = h * i),
-            (o = this.calcPositionWithRest_(l, s, f, r)),
-            (u = a * i),
-            S.push({
-              srcX: o,
-              srcY: u,
-              destX: c,
-              destY: p,
-              width: r,
-              height: b,
-            })
-      if (f > 0)
-        for (m = 0; m < g; m++)
-          (h = this.calcYCoordinateYRest_(m, g, n)),
-            (c = (d = this.calcXCoordinateYRest_(h, s, a, y, n)) * r),
-            (p = this.calcPositionWithRest_(h, a, b, i)),
-            (o = s * r),
-            (u = this.calcPositionWithRest_(m, a, b, i)),
-            S.push({
-              srcX: o,
-              srcY: u,
-              destX: c,
-              destY: p,
-              width: f,
-              height: i,
-            })
-      for (l = 0; l < y; l++)
-        for (m = 0; m < g; m++)
-          (h = (m + 37 * n + 41 * (d = (l + 29 * n + 31 * m) % y)) % g),
-            (c =
-              d * r + (d >= this.calcXCoordinateYRest_(h, s, a, y, n) ? f : 0)),
-            (p =
-              h * i + (h >= this.calcYCoordinateXRest_(d, s, a, g, n) ? b : 0)),
-            (o = l * r + (l >= s ? f : 0)),
-            (u = m * i + (m >= a ? b : 0)),
-            S.push({
-              srcX: o,
-              srcY: u,
-              destX: c,
-              destY: p,
-              width: r,
-              height: i,
-            })
-      return S
-    },
-    calcPositionWithRest_: function (e, t, r, i) {
-      return e * i + (e >= t ? r : 0)
-    },
-    calcXCoordinateXRest_: function (e, t, r) {
-      return (e + 61 * r) % t
-    },
-    calcYCoordinateXRest_: function (e, t, r, i, n) {
-      var s,
-        a,
-        o = n % 2 == 1
-      return (
-        (e < t ? o : !o) ? ((a = r), (s = 0)) : ((a = i - r), (s = r)),
-        ((e + 53 * n + 59 * r) % a) + s
-      )
-    },
-    calcXCoordinateYRest_: function (e, t, r, i, n) {
-      var s,
-        a,
-        o = n % 2 == 1
-      return (
-        (e < r ? o : !o) ? ((a = i - t), (s = t)) : ((a = t), (s = 0)),
-        ((e + 67 * n + t + 71) % a) + s
-      )
-    },
-    calcYCoordinateYRest_: function (e, t, r) {
-      return (e + 73 * r) % t
-    },
-  }
 })()
