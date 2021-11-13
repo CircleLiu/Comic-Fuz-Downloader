@@ -30,6 +30,7 @@
 #### Features
 
 - 对Comic Fuz新版UI和加密方式支持
+- 按GreasyFork规范更新引用
 
 ### 0.2.2 (2021/6/21)
 
