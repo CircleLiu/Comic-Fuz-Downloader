@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.2.2
+// @version           0.3.0
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 // @match             https://comic-fuz.com/book/viewer*
