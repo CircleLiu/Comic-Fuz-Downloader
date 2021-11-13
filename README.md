@@ -1,5 +1,5 @@
 # Comic Fuz Downloader
-# 由于Comic Fuz更新了UI和加密方式，项目暂时失效，正在更新。。。
+# 现已支持新版UI！
 
 用于从Comic Fuz阅读器，将漫画打包为zip下载。
 
@@ -13,7 +13,7 @@
 
 1. 打开Comic Fuz漫画阅读器
 
-2. 点击插件在阅读器菜单左上角中加入的下载按钮
+2. 点击插件在阅读器菜单左下角中加入的下载按钮
 
     ![Download Button](https://circleliu.github.io/Comic-Fuz-Downloader/imgs/download.png)
 
@@ -23,18 +23,13 @@
 
 
 
-## 手动安装步骤
-
-1. 安装扩展程序（如果已经安装请跳过）
-   * Chrome 浏览器需要安装 [TamperMonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) 扩展程序。
-   * Firefox 浏览器需要安装 [GreaseMonkey](https://addons.mozilla.org/zh-CN/firefox/addon/greasemonkey/) 附加组件。
-   * Opera 浏览器需要安装 [TamperMonkey Beta](https://addons.opera.com/zh-cn/extensions/details/tampermonkey-beta/) 扩展。
-   * Safari 浏览器需要安装 [TamperMonkey](http://tampermonkey.net/index.php?ext=dhdg&browser=safari) 扩展。
-
-
-2. [点击这里安装脚本](https://circleliu.github.io/Comic-Fuz-Downloader/comic-fuz-downloader.user.js).
-
 ## 变更日志
+
+### 0.3.0 (2021/11/14)
+
+#### Features
+
+- 对Comic Fuz新版UI和加密方式支持
 
 ### 0.2.2 (2021/6/21)
 
