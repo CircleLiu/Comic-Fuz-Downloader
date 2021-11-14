@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.3.0
+// @version           0.3.1
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 // @match             https://comic-fuz.com/book/viewer*
@@ -157,10 +157,10 @@
         total: 0,
         done: 0,
       }
-      const promises = metadata.pages.map(({image}) => {
+      const promises = metadata.pages.map(({image}, i) => {
         if (image){
           progress.total++
-          return getImageToZip(image, zip, progress)
+          return getImageToZip(image, zip, progress, i)
         }
       })
       await Promise.all(promises)
@@ -173,16 +173,17 @@
 
     function getNameFromMetadata() {
       if (metadata.bookIssue) {
-        return metadata.bookIssue.bookIssueName
+        return metadata.bookIssue.bookIssueName.trim()
       } else if (metadata.viewerTitle) {
-        return metadata.viewerTitle
+        return metadata.viewerTitle.trim()
       } else if (metadata.magazineIssue) {
-        return metadata.magazineIssue.magazineName + metadata.magazineIssue.magazineIssueName
+        return metadata.magazineIssue.magazineName.trim() + ' ' + metadata.magazineIssue.magazineIssueName.trim()
       }
     }
 
-    async function getImageToZip(image, zip, progress) {
-      const fileName = image.imageUrl.slice(image.imageUrl.lastIndexOf('/') + 1, image.imageUrl.indexOf('?')).replace('.enc', '')
+    async function getImageToZip(image, zip, progress, index) {
+      // const fileName = image.imageUrl.slice(image.imageUrl.lastIndexOf('/') + 1, image.imageUrl.indexOf('?')).replace('.enc', '')
+      const fileName = `${index}.jpeg`
       const imageData = await decryptImage(image)
       addImageToZip(fileName, imageData, zip)
       if (progress) {
