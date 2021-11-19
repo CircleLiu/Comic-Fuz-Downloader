@@ -25,9 +25,15 @@
 
 ## 变更日志
 
+### 0.3.2 (2021/11/20)
+#### Enhancement
+ - 添加鼠标指针提示
+#### Bugfix
+ - Error Handling
+
 ### 0.3.1 (2021/11/14)
 
-#### BUG
+#### Bugfix
 
 - 修复页码乱序问题
 - 去掉文件名多余空格
@@ -45,7 +51,7 @@
 
 - 文件名改为Content Title
 
-#### BUG
+#### Bugfix
 
 - 修复了ComicInfo中的Content Title为空的问题
 

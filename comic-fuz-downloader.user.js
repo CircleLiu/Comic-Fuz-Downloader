@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.3.1
+// @version           0.3.2
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
+// @license           MIT
 // @match             https://comic-fuz.com/book/viewer*
 // @match             https://comic-fuz.com/magazine/viewer*
 // @match             https://comic-fuz.com/manga/viewer*
@@ -95,6 +96,7 @@
       'grid-area': 'hoge',
       color: '#2c3438',
       width: 'fit-content',
+      cursor: 'pointer',
     })
     divDownload.on('click', async () => {
       setDownloaderBusy()
@@ -104,7 +106,7 @@
       } catch (error) {
         console.error(error)
         setDownloaderReady()
-        setText('Download Failed!')
+        setText(error.message)
       }
     })
 
@@ -143,8 +145,7 @@
 
     async function downloadAsZip() {
       if (!metadata) {
-        setText('Failed to load data!')
-        return
+        throw new Error('Failed to load data!')
       }
 
       const zipName = getNameFromMetadata()
