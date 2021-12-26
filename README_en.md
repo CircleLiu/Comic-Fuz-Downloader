@@ -1,3 +1,5 @@
+[中文](./README.md)
+
 # Comic Fuz Downloader
 
 For Comic Fuz, download comics and package as Zip file.
