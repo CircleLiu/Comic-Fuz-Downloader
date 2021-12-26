@@ -25,6 +25,11 @@
 
 ## 变更日志
 
+### 0.3.4 (2021/12/27)
+#### Enhancement
+ - Handle errors to make sure it can download when some pages failed to load
+ - Change the way of locating footer in case changes of unique class id
+
 ### 0.3.3 (2021/12/23)
 #### Bugfix
  - 修复因元素class变动导致无法加载的问题

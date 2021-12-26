@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.3.3
+// @version           0.3.4
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 // @license           MIT
@@ -133,8 +133,8 @@
     const maxRetry = 10
     ;(async () => {
       for (let i = 0; i < maxRetry; ++i) {
-        if ($('.ViewerFooter_footer__qBfKj').length) {
-          $('.ViewerFooter_footer__qBfKj:first').append(divDownload)
+        if ($('div[class^="ViewerFooter_footer__"]').length) {
+          $('div[class^="ViewerFooter_footer__"]:first').append(divDownload)
           setDownloaderReady()
           break
         } else {
@@ -183,10 +183,13 @@
     }
 
     async function getImageToZip(image, zip, progress, index) {
-      // const fileName = image.imageUrl.slice(image.imageUrl.lastIndexOf('/') + 1, image.imageUrl.indexOf('?')).replace('.enc', '')
       const fileName = `${index}.jpeg`
-      const imageData = await decryptImage(image)
-      addImageToZip(fileName, imageData, zip)
+      try {
+        const imageData = await decryptImage(image)
+        addImageToZip(fileName, imageData, zip)
+      } catch (err) {
+        console.error(err)
+      }
       if (progress) {
         progress.done++
         updateDownloadProgress(progress)
