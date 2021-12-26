@@ -1,5 +1,6 @@
+[English](./README_en.md)
+
 # Comic Fuz Downloader
-# 现已支持新版UI！
 
 用于从Comic Fuz阅读器，将漫画打包为zip下载。
 
