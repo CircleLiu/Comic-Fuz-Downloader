@@ -32,27 +32,66 @@
   const api = getApi()
 
   const imgBaseUrl = 'https://img.comic-fuz.com'
+  const apiBaseUrl = 'https://api.comic-fuz.com'
+  const deviceInfo = {
+    deviceType: 2,
+  }
+  const comicType = {
+    book: {
+      url: `${apiBaseUrl}/v1/book_viewer_2`,
+      request: {
+        body: {
+          deviceInfo,
+          bookIssueId: '',
+          consumePaidPoint: 0,
+          purchaseRequest: false,
+        },
+        encoder: api.v1.BookViewer2Request.encode,
+      },
+      response: {
+        decoder: api.v1.BookViewer2Response.decode,
+      },
+    },
+    magazine: {
+      url: `${apiBaseUrl}/v1/magazine_viewer_2`,
+      request: {
+        body: {
+          deviceInfo,
+          magazineIssueId: "",
+          consumePaidPoint: 0,
+          purchaseRequest: false,
+        },
+        encoder: api.v1.MagazineViewer2Resquest.encode,
+      },
+      response: {
+        decoder: api.v1.MagazineViewer2Response.decode,
+      }
+    },
+    manga: {
+      url: `${apiBaseUrl}/v1/manga_viewer`,
+      request: {
+        body: {
+          deviceInfo,
+          chapterId: "",
+          consumePoint: {
+            event: 0,
+            paid: 0,
+          },
+          useTicket: false,
+        },
+        encoder: api.v1.MangaViewerResquest.encode,
+      },
+      response: {
+        decoder: api.v1.MangaViewerResponse.decode,
+      }
+    }
+  }
   const responseDecoder = {
     'book_viewer_2': api.v1.BookViewer2Response,
     'book_viewer': api.v1.BookViewer2Response,
     'magazine_viewer_2': api.v1.MagazineViewer2Response,
     'magazine_viewer': api.v1.MagazineViewerResponse,
     'manga_viewer': api.v1.MangaViewerResponse,
-  }
-  
-  const oldFetch = window.fetch
-  window.fetch = async (input, options) => {
-    const response = await oldFetch(input, options)
-
-    for (const i in responseDecoder) {
-      if (input.indexOf(i) > -1) {
-        const resClone = response.clone()
-        decodeResponse(resClone, responseDecoder[i])
-        break;
-      }
-    }
-    
-    return response
   }
 
   let metadata
@@ -62,7 +101,34 @@
     metadata = res
   }
 
-  
+  async function getMetadata() {
+    const url = 'https://api.comic-fuz.com/v1/book_viewer_2'
+    const body = {
+      deviceInfo: {
+        deviceType: 2,
+      },
+      bookIssueId: '25929',
+      consumePaidPoint: 0,
+      purchaseRequest: true,
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      body: api.v1.BookViewer2Request.encode(body).finish(),
+      decode: api.v1.BookViewer2Response.decode
+    })
+    console.log(api.v1.BookViewer2Response.decode(new Uint8Array(await response.arrayBuffer())))
+
+    // axios.post(url, api.v1.BookViewer2Request.encode(body).finish(), {
+    //   withCredentials: true,
+    //   headers: {'Content-Type': 'application/protobuf' }
+    // })
+    //   .then((res) => {
+    //     const decodedRes = api.v1.BookViewer2Response.decode(new Uint8Array(res))
+    //     console.log(decodedRes)
+    //   })
+  }
 
   async function decryptImage({imageUrl, encryptionKey, iv}) {
     const res = await axios.get(imgBaseUrl + imageUrl, {
@@ -99,15 +165,17 @@
       cursor: 'pointer',
     })
     divDownload.on('click', async () => {
-      setDownloaderBusy()
-      try {
-        await downloadAsZip()
-        setDownloaderReady()
-      } catch (error) {
-        console.error(error)
-        setDownloaderReady()
-        setText(error.message)
-      }
+      // console.log(metadata)
+      // setDownloaderBusy()
+      // try {
+      //   await downloadAsZip()
+      //   setDownloaderReady()
+      // } catch (error) {
+      //   console.error(error)
+      //   setDownloaderReady()
+      //   setText(error.message)
+      // }
+      getMetadata()
     })
 
     function setDownloaderReady() {
