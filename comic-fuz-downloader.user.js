@@ -187,9 +187,10 @@
       if (!comic.metadata) {
         throw new Error('No metadata')
       }
+      const maxLength = comic.metadata.pages.filter(({image}) => !!image).length
       spanDownloadRange.children('input').attr({
         min: 1,
-        max: comic.metadata.pages.length,
+        max: maxLength,
       })
 
       $('#downloadFrom').val(1)
@@ -204,7 +205,7 @@
         }
       })
 
-      $('#downloadTo').val(comic.metadata.pages.length)
+      $('#downloadTo').val(maxLength)
       $('#downloadTo').on('input', () => {
         if (!$('#downloadTo').val()) return
 
