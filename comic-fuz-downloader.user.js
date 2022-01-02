@@ -33,101 +33,93 @@
 
   const imgBaseUrl = 'https://img.comic-fuz.com'
   const apiBaseUrl = 'https://api.comic-fuz.com'
-  const deviceInfo = {
-    deviceType: 2,
-  }
-  const comicType = {
-    book: {
-      url: `${apiBaseUrl}/v1/book_viewer_2`,
-      request: {
-        body: {
-          deviceInfo,
-          bookIssueId: '',
-          consumePaidPoint: 0,
-          purchaseRequest: false,
-        },
-        encoder: api.v1.BookViewer2Request.encode,
-      },
-      response: {
-        decoder: api.v1.BookViewer2Response.decode,
-      },
-    },
-    magazine: {
-      url: `${apiBaseUrl}/v1/magazine_viewer_2`,
-      request: {
-        body: {
-          deviceInfo,
-          magazineIssueId: "",
-          consumePaidPoint: 0,
-          purchaseRequest: false,
-        },
-        encoder: api.v1.MagazineViewer2Resquest.encode,
-      },
-      response: {
-        decoder: api.v1.MagazineViewer2Response.decode,
-      }
-    },
-    manga: {
-      url: `${apiBaseUrl}/v1/manga_viewer`,
-      request: {
-        body: {
-          deviceInfo,
-          chapterId: "",
-          consumePoint: {
-            event: 0,
-            paid: 0,
-          },
-          useTicket: false,
-        },
-        encoder: api.v1.MangaViewerResquest.encode,
-      },
-      response: {
-        decoder: api.v1.MangaViewerResponse.decode,
-      }
-    }
-  }
-  const responseDecoder = {
-    'book_viewer_2': api.v1.BookViewer2Response,
-    'book_viewer': api.v1.BookViewer2Response,
-    'magazine_viewer_2': api.v1.MagazineViewer2Response,
-    'magazine_viewer': api.v1.MagazineViewerResponse,
-    'manga_viewer': api.v1.MangaViewerResponse,
-  }
-
-  let metadata
-  async function decodeResponse(response, decoder) {
-    const data = await response.arrayBuffer()
-    const res = decoder.decode(new Uint8Array(data))
-    metadata = res
-  }
-
-  async function getMetadata() {
-    const url = 'https://api.comic-fuz.com/v1/book_viewer_2'
-    const body = {
-      deviceInfo: {
+  
+  class Comic {
+    constructor (path, request, response) {
+      const deviceInfo = {
         deviceType: 2,
-      },
-      bookIssueId: '25929',
-      consumePaidPoint: 0,
-      purchaseRequest: true,
+      }
+      this.url = `${apiBaseUrl}/v1/${path}`
+      this.requestBody = {
+        deviceInfo,
+      }
+      this.request = request
+      this.response = response
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      credentials: 'include',
-      body: api.v1.BookViewer2Request.encode(body).finish(),
-      decode: api.v1.BookViewer2Response.decode
-    })
-    console.log(api.v1.BookViewer2Response.decode(new Uint8Array(await response.arrayBuffer())))
+    async fetchMetadata() {
+      const response = await fetch(this.url, {
+        method: 'POST',
+        credentials: 'include',
+        body: this.request.encode(this.requestBody).finish(),
+      })
+      this.metadata = await this.decodeResponse(response)
+    }
 
-    // axios.post(url, api.v1.BookViewer2Request.encode(body).finish(), {
-    //   withCredentials: true,
-    //   headers: {'Content-Type': 'application/protobuf' }
-    // })
-    //   .then((res) => {
-    //     const decodedRes = api.v1.BookViewer2Response.decode(new Uint8Array(res))
-    //     console.log(decodedRes)
-    //   })
+    async decodeResponse(response) {
+      const data = await response.arrayBuffer()
+      const res = this.response.decode(new Uint8Array(data))
+      return res
+    }
+  }
+
+  class Book extends Comic {
+    constructor (bookIssueId) {
+      super('book_viewer_2', api.v1.BookViewer2Request, api.v1.BookViewer2Response)
+      this.requestBody = {
+        deviceInfo: this.requestBody.deviceInfo,
+        bookIssueId,
+        consumePaidPoint: 0,
+        purchaseRequest: false,
+      }
+    }
+  }
+
+  class Magazine extends Comic {
+    constructor (magazineIssueId) {
+      super('magazine_viewer_2', api.v1.MagazineViewer2Request, api.v1.MagazineViewer2Response)
+      this.requestBody = {
+        deviceInfo: this.requestBody.deviceInfo,
+        magazineIssueId,
+        consumePaidPoint: 0,
+        purchaseRequest: false,
+      }
+    }
+  }
+
+  class Manga extends Comic {
+    constructor (chapterId) {
+      super('manga_viewer', api.v1.MangaViewerRequest, api.v1.MangaViewerResponse)
+      this.requestBody = {
+        deviceInfo: this.requestBody.deviceInfo,
+        chapterId,
+        consumePoint: {
+          event: 0,
+          paid: 0,
+        },
+        useTicket: false,
+      }
+    }
+  }
+
+  let comic
+  async function initialize() {
+    const path = new URL(window.location.href).pathname.split('/')
+    const type = path[path.length - 3]
+    const id = path[path.length - 1]
+    console.log(path, type, id)
+    switch (type.toLowerCase()) {
+      case 'book':
+        comic = new Book(id)
+        break
+      case 'magazine':
+        comic = new Magazine(id)
+        break
+      case 'manga':
+        comic = new Manga(id)
+        break
+    }
+    await comic.fetchMetadata()
   }
 
   async function decryptImage({imageUrl, encryptionKey, iv}) {
@@ -165,23 +157,20 @@
       cursor: 'pointer',
     })
     divDownload.on('click', async () => {
-      // console.log(metadata)
-      // setDownloaderBusy()
-      // try {
-      //   await downloadAsZip()
-      //   setDownloaderReady()
-      // } catch (error) {
-      //   console.error(error)
-      //   setDownloaderReady()
-      //   setText(error.message)
-      // }
-      getMetadata()
+      setDownloaderBusy()
+      try {
+        await downloadAsZip(comic.metadata)
+        setDownloaderReady()
+      } catch (error) {
+        console.error(error)
+        setDownloaderReady(error.message)
+      }
     })
 
-    function setDownloaderReady() {
+    function setDownloaderReady(msg) {
       $('#downloaderIcon').show()
       $('#downloadingIcon').hide()
-      setText('Download')
+      setText(msg || 'Download')
     }
 
     function setDownloaderBusy() {
@@ -203,7 +192,15 @@
       for (let i = 0; i < maxRetry; ++i) {
         if ($('div[class^="ViewerFooter_footer__"]').length) {
           $('div[class^="ViewerFooter_footer__"]:first').append(divDownload)
-          setDownloaderReady()
+          setDownloaderBusy()
+          setText('Initializing...')
+          try {
+            await initialize()
+            console.log(comic.metadata)
+            setDownloaderReady()
+          } catch (err) {
+            setDownloaderReady('Initialization failed!')
+          }
           break
         } else {
           await delay(500)
@@ -211,12 +208,12 @@
       }
     })()
 
-    async function downloadAsZip() {
+    async function downloadAsZip(metadata) {
       if (!metadata) {
         throw new Error('Failed to load data!')
       }
 
-      const zipName = getNameFromMetadata()
+      const zipName = getNameFromMetadata(metadata)
       const zip = new JSZip()
       if (metadata.tableOfContents){
         zip.file('TableOfContents.txt', JSON.stringify(metadata.tableOfContents, null, '  '))
@@ -240,7 +237,7 @@
       saveAs(content, `${zipName}.zip`)
     }
 
-    function getNameFromMetadata() {
+    function getNameFromMetadata(metadata) {
       if (metadata.bookIssue) {
         return metadata.bookIssue.bookIssueName.trim()
       } else if (metadata.viewerTitle) {
