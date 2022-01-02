@@ -144,28 +144,82 @@
     // const downloadIcon = 'http://localhost:5000/icons/download.png'
     // const loadingIcon = 'http://localhost:5000/icons/loading.gif'
     const divDownload = $(`
-      <div id="downloader">
-        <img id="downloaderIcon" src="${downloadIcon}">
-        <img id="downloadingIcon" src="${loadingIcon}">
-        <span id="downloaderText">Initializing</span>
-      </div>
+      <div id="downloader"></div>
     `)
     divDownload.css({
       'grid-area': 'hoge',
       color: '#2c3438',
       width: 'fit-content',
+    })
+
+    const spanDownloadButton = $(`
+      <span id="downloadButton">
+        <img id="downloaderIcon" src="${downloadIcon}">
+        <img id="downloadingIcon" src="${loadingIcon}">
+        <span id="downloaderText">Initializing</span>
+      </span>
+    `)
+    spanDownloadButton.css({
       cursor: 'pointer',
     })
-    divDownload.on('click', async () => {
+    spanDownloadButton.on('click', async () => {
       setDownloaderBusy()
       try {
-        await downloadAsZip(comic.metadata)
+        await downloadAsZip(comic.metadata, $('#downloadFrom').val(), $('#downloadTo').val())
         setDownloaderReady()
       } catch (error) {
         console.error(error)
         setDownloaderReady(error.message)
       }
     })
+
+    const spanDownloadRange = $(`
+      <span id="downloadRange">
+        <input id="downloadFrom" type="number">~<input id="downloadTo" type="number">
+      </span>
+    `)
+    spanDownloadRange.children('input').css({
+      width: '3rem',
+    })
+    
+
+    function initRange() {
+      if (!comic.metadata) {
+        throw new Error('No metadata')
+      }
+      spanDownloadRange.children('input').attr({
+        min: 1,
+        max: comic.metadata.pages.length,
+      })
+      
+      $('#downloadFrom').val(1)
+      $('#downloadFrom').on('input', () => {
+        if (!$('#downloadFrom').val()) return
+
+        const max = Math.min(+$('#downloadFrom').attr('max'), +$('#downloadTo').val())
+        if (+$('#downloadFrom').val() < +$('#downloadFrom').attr('min')) {
+          $('#downloadFrom').val($('#downloadFrom').attr('min'))
+        } else if (+$('#downloadFrom').val() > max) {
+          $('#downloadFrom').val(max)
+        }
+      })
+
+      $('#downloadTo').val(comic.metadata.pages.length)
+      $('#downloadTo').on('input', () => {
+        if (!$('#downloadTo').val()) return
+
+        const min = Math.max(+$('#downloadTo').attr('min'), +$('#downloadFrom').val())
+        if (+$('#downloadTo').val() > +$('#downloadTo').attr('max')) {
+          $('#downloadTo').val($('#downloadTo').attr('max'))
+        } else if (+$('#downloadTo').val() < min) {
+          $('#downloadTo').val(min)
+        }
+      })
+    }
+
+    divDownload.append(spanDownloadButton)
+    divDownload.append(spanDownloadRange)
+
 
     function setDownloaderReady(msg) {
       $('#downloaderIcon').show()
@@ -196,6 +250,7 @@
           setText('Initializing...')
           try {
             await initialize()
+            initRange()
             console.log(comic.metadata)
             setDownloaderReady()
           } catch (err) {
@@ -208,9 +263,12 @@
       }
     })()
 
-    async function downloadAsZip(metadata) {
+    async function downloadAsZip(metadata, pageFrom, pageTo) {
+      console.log(pageFrom, pageTo)
       if (!metadata) {
         throw new Error('Failed to load data!')
+      } else if (!pageFrom || !pageTo || pageFrom > pageTo) {
+        throw new Error('Incorrect Range!')
       }
 
       const zipName = getNameFromMetadata(metadata)
@@ -223,10 +281,10 @@
         total: 0,
         done: 0,
       }
-      const promises = metadata.pages.map(({image}, i) => {
+      const promises = metadata.pages.slice(pageFrom - 1, pageTo).map(({image}, i) => {
         if (image){
           progress.total++
-          return getImageToZip(image, zip, progress, i)
+          return getImageToZip(image, zip, progress, +pageFrom + i)
         }
       })
       await Promise.all(promises)
