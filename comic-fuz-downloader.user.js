@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.3.4
+// @version           0.4.0-BETA
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 // @license           MIT
@@ -191,7 +191,7 @@
         min: 1,
         max: comic.metadata.pages.length,
       })
-      
+
       $('#downloadFrom').val(1)
       $('#downloadFrom').on('input', () => {
         if (!$('#downloadFrom').val()) return
