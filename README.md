@@ -26,6 +26,13 @@
 
 ## 变更日志
 
+### 0.4.0 (2022/01/04)
+
+#### Feature
+
+- Select download page range
+- Refactor new initialization logic
+
 ### 0.3.4 (2021/12/27)
 #### Enhancement
  - Handle errors to make sure it can download when some pages failed to load
