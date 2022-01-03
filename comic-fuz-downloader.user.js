@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.3.4
+// @version           0.4.0
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 // @license           MIT
@@ -32,37 +32,95 @@
   const api = getApi()
 
   const imgBaseUrl = 'https://img.comic-fuz.com'
-  const responseDecoder = {
-    'book_viewer_2': api.v1.BookViewer2Response,
-    'book_viewer': api.v1.BookViewer2Response,
-    'magazine_viewer_2': api.v1.MagazineViewer2Response,
-    'magazine_viewer': api.v1.MagazineViewerResponse,
-    'manga_viewer': api.v1.MangaViewerResponse,
-  }
+  const apiBaseUrl = 'https://api.comic-fuz.com'
   
-  const oldFetch = window.fetch
-  window.fetch = async (input, options) => {
-    const response = await oldFetch(input, options)
+  class Comic {
+    constructor (path, request, response) {
+      const deviceInfo = {
+        deviceType: 2,
+      }
+      this.url = `${apiBaseUrl}/v1/${path}`
+      this.requestBody = {
+        deviceInfo,
+      }
+      this.request = request
+      this.response = response
+    }
 
-    for (const i in responseDecoder) {
-      if (input.indexOf(i) > -1) {
-        const resClone = response.clone()
-        decodeResponse(resClone, responseDecoder[i])
-        break;
+    async fetchMetadata() {
+      const response = await fetch(this.url, {
+        method: 'POST',
+        credentials: 'include',
+        body: this.request.encode(this.requestBody).finish(),
+      })
+      this.metadata = await this.decodeResponse(response)
+    }
+
+    async decodeResponse(response) {
+      const data = await response.arrayBuffer()
+      const res = this.response.decode(new Uint8Array(data))
+      return res
+    }
+  }
+
+  class Book extends Comic {
+    constructor (bookIssueId) {
+      super('book_viewer_2', api.v1.BookViewer2Request, api.v1.BookViewer2Response)
+      this.requestBody = {
+        deviceInfo: this.requestBody.deviceInfo,
+        bookIssueId,
+        consumePaidPoint: 0,
+        purchaseRequest: false,
       }
     }
-    
-    return response
   }
 
-  let metadata
-  async function decodeResponse(response, decoder) {
-    const data = await response.arrayBuffer()
-    const res = decoder.decode(new Uint8Array(data))
-    metadata = res
+  class Magazine extends Comic {
+    constructor (magazineIssueId) {
+      super('magazine_viewer_2', api.v1.MagazineViewer2Request, api.v1.MagazineViewer2Response)
+      this.requestBody = {
+        deviceInfo: this.requestBody.deviceInfo,
+        magazineIssueId,
+        consumePaidPoint: 0,
+        purchaseRequest: false,
+      }
+    }
   }
 
-  
+  class Manga extends Comic {
+    constructor (chapterId) {
+      super('manga_viewer', api.v1.MangaViewerRequest, api.v1.MangaViewerResponse)
+      this.requestBody = {
+        deviceInfo: this.requestBody.deviceInfo,
+        chapterId,
+        consumePoint: {
+          event: 0,
+          paid: 0,
+        },
+        useTicket: false,
+      }
+    }
+  }
+
+  let comic
+  async function initialize() {
+    const path = new URL(window.location.href).pathname.split('/')
+    const type = path[path.length - 3]
+    const id = path[path.length - 1]
+    console.log(path, type, id)
+    switch (type.toLowerCase()) {
+      case 'book':
+        comic = new Book(id)
+        break
+      case 'magazine':
+        comic = new Magazine(id)
+        break
+      case 'manga':
+        comic = new Manga(id)
+        break
+    }
+    await comic.fetchMetadata()
+  }
 
   async function decryptImage({imageUrl, encryptionKey, iv}) {
     const res = await axios.get(imgBaseUrl + imageUrl, {
@@ -86,34 +144,88 @@
     // const downloadIcon = 'http://localhost:5000/icons/download.png'
     // const loadingIcon = 'http://localhost:5000/icons/loading.gif'
     const divDownload = $(`
-      <div id="downloader">
-        <img id="downloaderIcon" src="${downloadIcon}">
-        <img id="downloadingIcon" src="${loadingIcon}">
-        <span id="downloaderText">Initializing</span>
-      </div>
+      <div id="downloader"></div>
     `)
     divDownload.css({
       'grid-area': 'hoge',
       color: '#2c3438',
       width: 'fit-content',
+    })
+
+    const spanDownloadButton = $(`
+      <span id="downloadButton">
+        <img id="downloaderIcon" src="${downloadIcon}">
+        <img id="downloadingIcon" src="${loadingIcon}">
+        <span id="downloaderText">Initializing</span>
+      </span>
+    `)
+    spanDownloadButton.css({
       cursor: 'pointer',
     })
-    divDownload.on('click', async () => {
+    spanDownloadButton.on('click', async () => {
       setDownloaderBusy()
       try {
-        await downloadAsZip()
+        await downloadAsZip(comic.metadata, $('#downloadFrom').val(), $('#downloadTo').val())
         setDownloaderReady()
       } catch (error) {
         console.error(error)
-        setDownloaderReady()
-        setText(error.message)
+        setDownloaderReady(error.message)
       }
     })
 
-    function setDownloaderReady() {
+    const spanDownloadRange = $(`
+      <span id="downloadRange">
+        <input id="downloadFrom" type="number">~<input id="downloadTo" type="number">
+      </span>
+    `)
+    spanDownloadRange.children('input').css({
+      width: '3rem',
+    })
+    
+
+    function initRange() {
+      if (!comic.metadata) {
+        throw new Error('No metadata')
+      }
+      const maxLength = comic.metadata.pages.filter(({image}) => !!image).length
+      spanDownloadRange.children('input').attr({
+        min: 1,
+        max: maxLength,
+      })
+
+      $('#downloadFrom').val(1)
+      $('#downloadFrom').on('input', () => {
+        if (!$('#downloadFrom').val()) return
+
+        const max = Math.min(+$('#downloadFrom').attr('max'), +$('#downloadTo').val())
+        if (+$('#downloadFrom').val() < +$('#downloadFrom').attr('min')) {
+          $('#downloadFrom').val($('#downloadFrom').attr('min'))
+        } else if (+$('#downloadFrom').val() > max) {
+          $('#downloadFrom').val(max)
+        }
+      })
+
+      $('#downloadTo').val(maxLength)
+      $('#downloadTo').on('input', () => {
+        if (!$('#downloadTo').val()) return
+
+        const min = Math.max(+$('#downloadTo').attr('min'), +$('#downloadFrom').val())
+        if (+$('#downloadTo').val() > +$('#downloadTo').attr('max')) {
+          $('#downloadTo').val($('#downloadTo').attr('max'))
+        } else if (+$('#downloadTo').val() < min) {
+          $('#downloadTo').val(min)
+        }
+      })
+    }
+
+    divDownload.append(spanDownloadButton)
+    divDownload.append(spanDownloadRange)
+
+
+    function setDownloaderReady(msg) {
       $('#downloaderIcon').show()
       $('#downloadingIcon').hide()
-      setText('Download')
+      setText(msg || 'Download')
     }
 
     function setDownloaderBusy() {
@@ -135,7 +247,16 @@
       for (let i = 0; i < maxRetry; ++i) {
         if ($('div[class^="ViewerFooter_footer__"]').length) {
           $('div[class^="ViewerFooter_footer__"]:first').append(divDownload)
-          setDownloaderReady()
+          setDownloaderBusy()
+          setText('Initializing...')
+          try {
+            await initialize()
+            initRange()
+            console.log(comic.metadata)
+            setDownloaderReady()
+          } catch (err) {
+            setDownloaderReady('Initialization failed!')
+          }
           break
         } else {
           await delay(500)
@@ -143,12 +264,15 @@
       }
     })()
 
-    async function downloadAsZip() {
+    async function downloadAsZip(metadata, pageFrom, pageTo) {
+      console.log(pageFrom, pageTo)
       if (!metadata) {
         throw new Error('Failed to load data!')
+      } else if (!pageFrom || !pageTo || pageFrom > pageTo) {
+        throw new Error('Incorrect Range!')
       }
 
-      const zipName = getNameFromMetadata()
+      const zipName = getNameFromMetadata(metadata)
       const zip = new JSZip()
       if (metadata.tableOfContents){
         zip.file('TableOfContents.txt', JSON.stringify(metadata.tableOfContents, null, '  '))
@@ -158,10 +282,10 @@
         total: 0,
         done: 0,
       }
-      const promises = metadata.pages.map(({image}, i) => {
+      const promises = metadata.pages.slice(pageFrom - 1, pageTo).map(({image}, i) => {
         if (image){
           progress.total++
-          return getImageToZip(image, zip, progress, i)
+          return getImageToZip(image, zip, progress, +pageFrom + i)
         }
       })
       await Promise.all(promises)
@@ -172,7 +296,7 @@
       saveAs(content, `${zipName}.zip`)
     }
 
-    function getNameFromMetadata() {
+    function getNameFromMetadata(metadata) {
       if (metadata.bookIssue) {
         return metadata.bookIssue.bookIssueName.trim()
       } else if (metadata.viewerTitle) {
