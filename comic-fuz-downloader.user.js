@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.4.0
+// @version           0.4.1
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 // @license           MIT
@@ -18,6 +18,7 @@
 // @require           https://unpkg.com/jszip@3.6.0/vendor/FileSaver.js
 // @require           https://unpkg.com/jquery@3.6.0/dist/jquery.min.js
 // @require           https://cdn.jsdelivr.net/npm/protobufjs@6.11.2/dist/protobuf.min.js
+// @require           https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js
 
 // @require           https://greasyfork.org/scripts/435461-comic-fuz-downloader-protobuf-message/code/Comic%20Fuz%20Downloader%20Protobuf%20Message.js?version=987894
 
@@ -107,7 +108,7 @@
     const path = new URL(window.location.href).pathname.split('/')
     const type = path[path.length - 3]
     const id = path[path.length - 1]
-    console.log(path, type, id)
+    // console.log(path, type, id)
     switch (type.toLowerCase()) {
       case 'book':
         comic = new Book(id)
@@ -165,7 +166,7 @@
     spanDownloadButton.on('click', async () => {
       setDownloaderBusy()
       try {
-        await downloadAsZip(comic.metadata, $('#downloadFrom').val(), $('#downloadTo').val())
+        await downloadAsZip(comic.metadata, +$('#downloadFrom').val(), +$('#downloadTo').val())
         setDownloaderReady()
       } catch (error) {
         console.error(error)
@@ -194,7 +195,7 @@
       })
 
       $('#downloadFrom').val(1)
-      $('#downloadFrom').on('input', () => {
+      $('#downloadFrom').on('input', _.debounce(() => {
         if (!$('#downloadFrom').val()) return
 
         const max = Math.min(+$('#downloadFrom').attr('max'), +$('#downloadTo').val())
@@ -203,10 +204,10 @@
         } else if (+$('#downloadFrom').val() > max) {
           $('#downloadFrom').val(max)
         }
-      })
+      }, 300))
 
       $('#downloadTo').val(maxLength)
-      $('#downloadTo').on('input', () => {
+      $('#downloadTo').on('input', _.debounce(() => {
         if (!$('#downloadTo').val()) return
 
         const min = Math.max(+$('#downloadTo').attr('min'), +$('#downloadFrom').val())
@@ -215,7 +216,7 @@
         } else if (+$('#downloadTo').val() < min) {
           $('#downloadTo').val(min)
         }
-      })
+      }, 300))
     }
 
     divDownload.append(spanDownloadButton)
@@ -252,7 +253,7 @@
           try {
             await initialize()
             initRange()
-            console.log(comic.metadata)
+            // console.log(comic.metadata)
             setDownloaderReady()
           } catch (err) {
             setDownloaderReady('Initialization failed!')
@@ -265,7 +266,7 @@
     })()
 
     async function downloadAsZip(metadata, pageFrom, pageTo) {
-      console.log(pageFrom, pageTo)
+      // console.log(typeof pageFrom, typeof pageTo)
       if (!metadata) {
         throw new Error('Failed to load data!')
       } else if (!pageFrom || !pageTo || pageFrom > pageTo) {
@@ -285,7 +286,7 @@
       const promises = metadata.pages.slice(pageFrom - 1, pageTo).map(({image}, i) => {
         if (image){
           progress.total++
-          return getImageToZip(image, zip, progress, +pageFrom + i)
+          return getImageToZip(image, zip, progress, pageFrom + i)
         }
       })
       await Promise.all(promises)
