@@ -26,6 +26,17 @@
 
 ## 变更日志
 
+### 0.4.1 (2022/01/24)
+
+#### Enhancement
+
+- Add debounce for range input
+
+#### Bugfix
+
+- Throw incorrect range while range is correct
+
+
 ### 0.4.0 (2022/01/04)
 
 #### Feature
