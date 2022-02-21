@@ -148,7 +148,7 @@
       <div id="downloader"></div>
     `)
     divDownload.css({
-      'grid-area': 'hoge',
+      'grid-area': 'download',
       color: '#2c3438',
       width: 'fit-content',
     })
@@ -247,6 +247,15 @@
     ;(async () => {
       for (let i = 0; i < maxRetry; ++i) {
         if ($('div[class^="ViewerFooter_footer__"]').length) {
+          const footerClass = $('div[class^="ViewerFooter_footer__"]:first').attr('class')
+          $('head').append(`<style type="text/css">
+              .${footerClass} {
+                grid-template:
+                  "page page page page page" auto
+                  "slider slider slider slider slider" auto
+                  "comment tableOfContents zoom zoomRatio download" auto/150px 150px 150px 150px 1fr;
+              }
+            </style>`)
           $('div[class^="ViewerFooter_footer__"]:first').append(divDownload)
           setDownloaderBusy()
           setText('Initializing...')
