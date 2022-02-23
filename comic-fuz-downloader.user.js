@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.4.1
+// @version           0.4.2
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 // @license           MIT
@@ -148,7 +148,7 @@
       <div id="downloader"></div>
     `)
     divDownload.css({
-      'grid-area': 'hoge',
+      'grid-area': 'download',
       color: '#2c3438',
       width: 'fit-content',
     })
@@ -242,12 +242,28 @@
       setText(`Loading: ${progress.done}/${progress.total}`)
     }
 
+    function checkAndLoad() {
+      if ($('#downloader').length === 0) {
+        $('div[class^="ViewerFooter_footer__"]:first').append(divDownload)
+      }
+    }
+
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
     const maxRetry = 10
     ;(async () => {
       for (let i = 0; i < maxRetry; ++i) {
         if ($('div[class^="ViewerFooter_footer__"]').length) {
-          $('div[class^="ViewerFooter_footer__"]:first').append(divDownload)
+          const footerClass = $('div[class^="ViewerFooter_footer__"]:first').attr('class')
+          $('head').append(`<style type="text/css">
+              .${footerClass} {
+                grid-template:
+                  "page page page page page" auto
+                  "slider slider slider slider slider" auto
+                  "comment tableOfContents zoom zoomRatio download" auto/150px 150px 150px 150px 1fr;
+              }
+            </style>`)
+          checkAndLoad()
+          $(document).on('click', checkAndLoad)
           setDownloaderBusy()
           setText('Initializing...')
           try {

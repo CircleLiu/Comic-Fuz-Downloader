@@ -26,6 +26,12 @@
 
 ## 变更日志
 
+### 0.4.1 (2022/02/24)
+
+#### Bugfix
+- Move downloader to the right place
+- Fix the issue that the downloader will disappear when click table of content
+
 ### 0.4.1 (2022/01/24)
 
 #### Enhancement
