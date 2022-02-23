@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.4.1
+// @version           0.4.2-DEV
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 // @license           MIT
@@ -242,6 +242,12 @@
       setText(`Loading: ${progress.done}/${progress.total}`)
     }
 
+    function checkAndLoad() {
+      if ($('#downloader').length === 0) {
+        $('div[class^="ViewerFooter_footer__"]:first').append(divDownload)
+      }
+    }
+
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
     const maxRetry = 10
     ;(async () => {
@@ -256,7 +262,8 @@
                   "comment tableOfContents zoom zoomRatio download" auto/150px 150px 150px 150px 1fr;
               }
             </style>`)
-          $('div[class^="ViewerFooter_footer__"]:first').append(divDownload)
+          checkAndLoad()
+          $(document).on('click', checkAndLoad)
           setDownloaderBusy()
           setText('Initializing...')
           try {
