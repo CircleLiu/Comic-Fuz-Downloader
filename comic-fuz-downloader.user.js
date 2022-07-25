@@ -324,7 +324,7 @@
     }
 
     async function getImageToZip(image, zip, progress, index) {
-      const fileName = `${index}.jpeg`
+      const fileName = `${index.toString().padStart(3, '0')}.jpeg`
       try {
         const imageData = await decryptImage(image)
         addImageToZip(fileName, imageData, zip)
