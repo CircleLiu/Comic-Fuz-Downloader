@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.4.2
+// @version           0.4.3
 // @description       Userscript for download comics on Comic Fuz
 // @author            Circle
 // @license           MIT
@@ -324,7 +324,7 @@
     }
 
     async function getImageToZip(image, zip, progress, index) {
-      const fileName = `${index}.jpeg`
+      const fileName = `${index.toString().padStart(3, '0')}.jpeg`
       try {
         const imageData = await decryptImage(image)
         addImageToZip(fileName, imageData, zip)

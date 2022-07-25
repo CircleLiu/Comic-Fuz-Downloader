@@ -26,7 +26,13 @@
 
 ## 变更日志
 
-### 0.4.1 (2022/02/24)
+### 0.4.3 (2022/07/25)
+
+#### Enhancement
+
+- Pads filename with '0' when index less than 100
+
+### 0.4.2 (2022/02/24)
 
 #### Bugfix
 - Move downloader to the right place
