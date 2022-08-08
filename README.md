@@ -13,18 +13,20 @@
 ## 使用方法
 
 1. 打开Comic Fuz漫画阅读器
-
 2. 点击插件在阅读器菜单左下角中加入的下载按钮
 
-    ![Download Button](https://circleliu.github.io/Comic-Fuz-Downloader/imgs/download.png)
-
+   ![Download Button](https://circleliu.github.io/Comic-Fuz-Downloader/imgs/download.png)
 3. 等待加载打包（如果页数较多会耗时较长，但因为是异步的所以你可以边看边等）
-
 4. 打包完成后会弹出下载窗口
 
-
-
 ## 变更日志
+
+
+### 0.4.4 (2022/08/09)
+
+#### Bugfix
+
+- Fix Download misplaced/disappered due to footer layout change.
 
 ### 0.4.3 (2022/07/25)
 
@@ -35,6 +37,7 @@
 ### 0.4.2 (2022/02/24)
 
 #### Bugfix
+
 - Move downloader to the right place
 - Fix the issue that the downloader will disappear when click table of content
 
@@ -48,7 +51,6 @@
 
 - Throw incorrect range while range is correct
 
-
 ### 0.4.0 (2022/01/04)
 
 #### Feature
@@ -57,19 +59,27 @@
 - Refactor new initialization logic
 
 ### 0.3.4 (2021/12/27)
+
 #### Enhancement
- - Handle errors to make sure it can download when some pages failed to load
- - Change the way of locating footer in case changes of unique class id
+
+- Handle errors to make sure it can download when some pages failed to load
+- Change the way of locating footer in case changes of unique class id
 
 ### 0.3.3 (2021/12/23)
+
 #### Bugfix
- - 修复因元素class变动导致无法加载的问题
+
+- 修复因元素class变动导致无法加载的问题
 
 ### 0.3.2 (2021/11/20)
+
 #### Enhancement
- - 添加鼠标指针提示
+
+- 添加鼠标指针提示
+
 #### Bugfix
- - Error Handling
+
+- Error Handling
 
 ### 0.3.1 (2021/11/14)
 
@@ -95,15 +105,11 @@
 
 - 修复了ComicInfo中的Content Title为空的问题
 
-
-
 ### 0.2.1 (2021/6/19)
 
 #### Features
 
 - 加入了打包ZIP阶段的进度百分比显示
-
-
 
 ### 0.2.0 (2021/6/19)
 
@@ -115,8 +121,6 @@
 
 - 优化了下载打包逻辑
 
-
-
 ### 0.1.2 (2021/6/17)
 
 #### Features
@@ -126,4 +130,3 @@
 #### Improvements
 
 - 换用了more efficient的图片打包方式（理论上能快点
-
