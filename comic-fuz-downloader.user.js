@@ -130,6 +130,11 @@
     const res = await axios.get(imgBaseUrl + imageUrl, {
       responseType: 'arraybuffer',
     })
+
+    if (!imageUrl.includes('.enc')) {
+      return btoa([].reduce.call(new Uint8Array(res.data),function(p,c){return p+String.fromCharCode(c)},''))
+    }
+
     const cipherParams = CryptoJS.lib.CipherParams.create({
       ciphertext: CryptoJS.lib.WordArray.create(res.data)
     })
