@@ -21,6 +21,16 @@
 
 ## 变更日志
 
+### 0.4.5 (2022/12/10)
+
+#### Enhancement
+
+- Modify image DPI to 72
+
+#### Bugfix
+
+- Position
+- Handle unencrypted images
 
 ### 0.4.4 (2022/08/09)
 
