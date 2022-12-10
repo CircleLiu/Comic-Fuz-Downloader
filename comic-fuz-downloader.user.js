@@ -111,7 +111,6 @@
     const path = new URL(window.location.href).pathname.split('/')
     const type = path[path.length - 3]
     const id = path[path.length - 1]
-    // console.log(path, type, id)
     switch (type.toLowerCase()) {
       case 'book':
         comic = new Book(id)
@@ -276,7 +275,6 @@
           try {
             await initialize()
             initRange()
-            // console.log(comic.metadata)
             setDownloaderReady()
           } catch (err) {
             setDownloaderReady('Initialization failed!')
@@ -289,7 +287,6 @@
     })()
 
     async function downloadAsZip(metadata, pageFrom, pageTo) {
-      // console.log(typeof pageFrom, typeof pageTo)
       if (!metadata) {
         throw new Error('Failed to load data!')
       } else if (!pageFrom || !pageTo || pageFrom > pageTo) {
