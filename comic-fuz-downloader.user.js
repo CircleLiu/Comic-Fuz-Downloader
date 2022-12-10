@@ -21,6 +21,7 @@
 // @require           https://unpkg.com/jquery@3.6.0/dist/jquery.min.js
 // @require           https://cdn.jsdelivr.net/npm/protobufjs@6.11.2/dist/protobuf.min.js
 // @require           https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js
+// @require           https://cdn.jsdelivr.net/npm/piexifjs@1.0.6/piexif.min.js
 
 // @require           https://greasyfork.org/scripts/435461-comic-fuz-downloader-protobuf-message/code/Comic%20Fuz%20Downloader%20Protobuf%20Message.js?version=987894
 
@@ -327,7 +328,8 @@
       const fileName = `${index.toString().padStart(3, '0')}.jpeg`
       try {
         const imageData = await decryptImage(image)
-        addImageToZip(fileName, imageData, zip)
+        const imageData72Dpi = modifyExif(imageData)
+        addImageToZip(fileName, imageData72Dpi, zip)
       } catch (err) {
         console.error(err)
       }
@@ -341,6 +343,21 @@
       zip.file(name, base64Data, {
         base64: true,
       })
+    }
+
+    function modifyExif(base64Data) {
+      const imageString = atob(base64Data)
+      const exif = piexif.load(imageString)
+
+      exif['0th'][piexif.ImageIFD.XResolution] = [720000,10000]
+      exif['0th'][piexif.ImageIFD.YResolution] = [720000,10000]
+
+      const newExifDump = piexif.dump(exif)
+
+      const newData = piexif.insert(newExifDump, imageString)
+      const newBase64 = btoa(newData)
+
+      return newBase64
     }
   })
 })()
