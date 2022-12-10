@@ -151,6 +151,7 @@
       <div id="downloader"></div>
     `)
     divDownload.css({
+      'margin-left': '24px',
       flex: '1 1',
       color: '#2c3438',
       width: 'fit-content',
