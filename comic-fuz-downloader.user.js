@@ -37,7 +37,7 @@
 
   const imgBaseUrl = 'https://img.comic-fuz.com'
   const apiBaseUrl = 'https://api.comic-fuz.com'
-  
+
   class Comic {
     constructor (path, request, response) {
       const deviceInfo = {
@@ -145,7 +145,7 @@
     })
     return dcWordArray.toString(CryptoJS.enc.Base64)
   }
-  
+
   $(document).ready($ => {
     const downloadIcon = 'https://circleliu.github.io/Comic-Fuz-Downloader/icons/download.png'
     const loadingIcon = 'https://circleliu.github.io/Comic-Fuz-Downloader/icons/loading.gif'
@@ -190,7 +190,7 @@
     spanDownloadRange.children('input').css({
       width: '3rem',
     })
-    
+
 
     function initRange() {
       if (!comic.metadata) {
@@ -321,7 +321,8 @@
       if (metadata.bookIssue) {
         return metadata.bookIssue.bookIssueName.trim()
       } else if (metadata.viewerTitle) {
-        return metadata.viewerTitle.trim()
+        const body = metadata.sns.body.match(/(?<=「).*(?=」)/)
+        return body == null ? metadata.viewerTitle : body
       } else if (metadata.magazineIssue) {
         return metadata.magazineIssue.magazineName.trim() + ' ' + metadata.magazineIssue.magazineIssueName.trim()
       }
@@ -341,7 +342,7 @@
         updateDownloadProgress(progress)
       }
     }
-  
+
     function addImageToZip(name, base64Data, zip) {
       zip.file(name, base64Data, {
         base64: true,
