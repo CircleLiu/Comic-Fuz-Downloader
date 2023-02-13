@@ -321,7 +321,7 @@
       if (metadata.bookIssue) {
         return metadata.bookIssue.bookIssueName.trim()
       } else if (metadata.viewerTitle) {
-        if (!metadata.sns && !metadata.sns.body)
+        if (!!metadata.sns && !!metadata.sns.body)
           return  metadata.sns.body.match(/(?<=「).*(?=」)/).trim()
         return metadata.viewerTitle.trim()
       } else if (metadata.magazineIssue) {
