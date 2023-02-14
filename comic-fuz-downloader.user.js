@@ -2,7 +2,7 @@
 // @name              Comic Fuz Downloader
 // @name:en           Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.4.5
+// @version           0.4.6
 // @description       Userscript for download comics on Comic Fuz
 // @description:en    Userscript for download comics on Comic Fuz
 // @author            Circle
