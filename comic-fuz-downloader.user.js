@@ -2,7 +2,7 @@
 // @name              Comic Fuz Downloader
 // @name:en           Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.4.6
+// @version           0.4.7
 // @description       Userscript for download comics on Comic Fuz
 // @description:en    Userscript for download comics on Comic Fuz
 // @author            Circle
@@ -321,10 +321,7 @@
       if (metadata.bookIssue) {
         return metadata.bookIssue.bookIssueName.trim()
       } else if (metadata.viewerTitle) {
-        if (!!metadata.sns && !!metadata.sns.body) {
-          return metadata.sns.body.match(/(?<=「).*(?=」)/).trim()
-        }
-        return metadata.viewerTitle.trim()
+        return metadata.sns?.body?.match(/(?<=「).*(?=」)/)?.trim() ?? metadata.viewerTitle.trim()
       } else if (metadata.magazineIssue) {
         return metadata.magazineIssue.magazineName.trim() + ' ' + metadata.magazineIssue.magazineIssueName.trim()
       }
