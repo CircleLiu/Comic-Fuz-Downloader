@@ -21,6 +21,12 @@
 
 ## 变更日志
 
+### 0.4.7 (2023/02/16)
+
+#### Bugfix
+
+- sns body regexp may cause exceptions
+
 ### 0.4.6 (2023/02/14)
 
 #### Enhancement
