@@ -339,12 +339,16 @@
         total: 0,
         done: 0,
       }
-      const promises = metadata.pages.slice(pageFrom - 1, pageTo).map(({image}, i) => {
-        if (image){
+      const promises = []
+      const images = metadata.pages.slice(pageFrom - 1, pageTo)
+      for (let i = 0; i < images.length; i++) {
+        await new Promise(r => setTimeout(r, i > 0 ? 100: 0))
+        const {image} = images[i]
+        if (image) {
           progress.total++
-          return getImageToZip(image, zip, progress, pageFrom + i)
+          promises.push(getImageToZip(image, zip, progress, pageFrom + i))
         }
-      })
+      }
       await Promise.all(promises)
 
       const content = await zip.generateAsync({ type: 'blob' }, ({ percent }) => {
