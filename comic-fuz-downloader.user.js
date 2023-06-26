@@ -2,7 +2,7 @@
 // @name              Comic Fuz Downloader
 // @name:en           Comic Fuz Downloader
 // @namespace         http://circleliu.cn
-// @version           0.4.8
+// @version           0.4.9
 // @description       Userscript for download comics on Comic Fuz
 // @description:en    Userscript for download comics on Comic Fuz
 // @author            Circle
@@ -33,10 +33,48 @@
 ;(function () {
   'use strict'
 
+  const DEFAULT_CONFIGS = {
+    // `timeout` specifies the number of milliseconds before the request times out.
+    // If the request takes longer than `timeout`, the request will be aborted/retried.
+    // `0` is never timeout
+    timeout: 60000,
+    // The number of times to retry before failing.
+    maxRetries: 3,
+    //the delay in milliseconds between retried requests.
+    retryDelay: 1000,
+  }
+
   const api = getApi()
 
   const imgBaseUrl = 'https://img.comic-fuz.com'
   const apiBaseUrl = 'https://api.comic-fuz.com'
+
+  const client = axios.create({
+    baseURL: imgBaseUrl,
+    ...DEFAULT_CONFIGS,
+  })
+
+  client.interceptors.response.use(null, (error) => {
+    if (error.config && shouldRetry(error)) {
+      const { __retryCount: retryCount = 0 } = error.config
+      error.config.__retryCount = retryCount + 1
+      const delay = error.config.retryDelay
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(client(error.config)), delay)
+      })
+    }
+    return Promise.reject(error)
+  })
+
+  const shouldRetry = (error) => {
+    const { maxRetries, __retryCount: retryCount = 0 } = error.config
+    if (retryCount < maxRetries) {
+      return true
+    }
+    return false
+  }
+
+  const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
   class Comic {
     constructor (path, request, response) {
@@ -126,7 +164,7 @@
   }
 
   async function decryptImage({imageUrl, encryptionKey, iv}) {
-    const res = await axios.get(imgBaseUrl + imageUrl, {
+    const res = await client.get(imageUrl, {
       responseType: 'arraybuffer',
     })
 
@@ -256,7 +294,6 @@
       }
     }
 
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
     const maxRetry = 10
     ;(async () => {
       for (let i = 0; i < maxRetry; ++i) {
@@ -303,12 +340,16 @@
         total: 0,
         done: 0,
       }
-      const promises = metadata.pages.slice(pageFrom - 1, pageTo).map(({image}, i) => {
-        if (image){
+      const promises = []
+      const images = metadata.pages.slice(pageFrom - 1, pageTo)
+      for (let i = 0; i < images.length; i++) {
+        await delay(i > 0 ? 100 : 0)
+        const {image} = images[i]
+        if (image) {
           progress.total++
-          return getImageToZip(image, zip, progress, pageFrom + i)
+          promises.push(getImageToZip(image, zip, progress, pageFrom + i))
         }
-      })
+      }
       await Promise.all(promises)
 
       const content = await zip.generateAsync({ type: 'blob' }, ({ percent }) => {

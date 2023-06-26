@@ -21,6 +21,13 @@
 
 ## 变更日志
 
+### 0.4.9 (2023/06/26)
+
+#### Enhancement
+
+- Add timeout and retry
+- Add delay between each request
+
 ### 0.4.8 (2023/02/16)
 
 #### Bugfix
