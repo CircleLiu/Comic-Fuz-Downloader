@@ -74,6 +74,8 @@
     return false
   }
 
+  const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+
   class Comic {
     constructor (path, request, response) {
       const deviceInfo = {
@@ -292,7 +294,6 @@
       }
     }
 
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
     const maxRetry = 10
     ;(async () => {
       for (let i = 0; i < maxRetry; ++i) {
@@ -342,7 +343,7 @@
       const promises = []
       const images = metadata.pages.slice(pageFrom - 1, pageTo)
       for (let i = 0; i < images.length; i++) {
-        await new Promise(r => setTimeout(r, i > 0 ? 100: 0))
+        await delay(i > 0 ? 100 : 0)
         const {image} = images[i]
         if (image) {
           progress.total++
