@@ -33,10 +33,46 @@
 ;(function () {
   'use strict'
 
+  const DEFAULT_CONFIGS = {
+    // `timeout` specifies the number of milliseconds before the request times out.
+    // If the request takes longer than `timeout`, the request will be aborted/retried.
+    // `0` is never timeout
+    timeout: 60000,
+    // The number of times to retry before failing.
+    maxRetries: 3,
+    //the delay in milliseconds between retried requests.
+    retryDelay: 1000,
+  }
+
   const api = getApi()
 
   const imgBaseUrl = 'https://img.comic-fuz.com'
   const apiBaseUrl = 'https://api.comic-fuz.com'
+
+  const client = axios.create({
+    baseURL: imgBaseUrl,
+    ...DEFAULT_CONFIGS,
+  })
+
+  client.interceptors.response.use(null, (error) => {
+    if (error.config && shouldRetry(error)) {
+      const { __retryCount: retryCount = 0 } = error.config
+      error.config.__retryCount = retryCount + 1
+      const delay = error.config.retryDelay
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(client(error.config)), delay)
+      })
+    }
+    return Promise.reject(error)
+  })
+
+  const shouldRetry = (error) => {
+    const { maxRetries, __retryCount: retryCount = 0 } = error.config
+    if (retryCount < maxRetries) {
+      return true
+    }
+    return false
+  }
 
   class Comic {
     constructor (path, request, response) {
@@ -126,7 +162,7 @@
   }
 
   async function decryptImage({imageUrl, encryptionKey, iv}) {
-    const res = await axios.get(imgBaseUrl + imageUrl, {
+    const res = await client.get(imageUrl, {
       responseType: 'arraybuffer',
     })
 
