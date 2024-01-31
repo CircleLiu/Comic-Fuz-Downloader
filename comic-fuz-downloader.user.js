@@ -193,10 +193,11 @@
       <div id="downloader"></div>
     `)
     divDownload.css({
-      'margin-left': '24px',
-      flex: '1 1',
-      color: '#2c3438',
-      width: 'fit-content',
+      "grid-area": 'rright',
+      display: 'flex',
+      "align-items": 'center',
+      gap: '24px',
+      color: '#929ea5',
     })
 
     const spanDownloadButton = $(`
@@ -290,20 +291,22 @@
 
     function checkAndLoad() {
       if ($('#downloader').length === 0) {
-        $('div[class^="ViewerFooter_footer__buttons__"]:first').append(divDownload)
+        $('div[class^="InternalViewerFooter_footer__wrapper__"]:first').append(divDownload)
       }
     }
 
     const maxRetry = 10
     ;(async () => {
       for (let i = 0; i < maxRetry; ++i) {
-        if ($('div[class^="ViewerFooter_footer__"]').length) {
-          const zoomContainer = $('div[class^="ViewerFooter_footer__zoomContainer__"]:first').attr('class')
+        const footer = $('div[class^="InternalViewerFooter_footer__wrapper__"]:first')
+        if (footer.length) {
+
           $('head').append(`<style type="text/css">
-              .${zoomContainer} {
-                flex: 0 1 270px;
+              .${footer.attr('class')} {
+                grid-template-areas: "left center right rright";
+                grid-template-columns: auto 1fr auto auto;
               }
-            </style>`)
+          </style>`)
 
           checkAndLoad()
           $(document).on('click', checkAndLoad)
