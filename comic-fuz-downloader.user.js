@@ -298,32 +298,31 @@
     const maxRetry = 10
     ;(async () => {
       for (let i = 0; i < maxRetry; ++i) {
-        const footer = $('div[class^="InternalViewerFooter_footer__wrapper__"]:first')
-        if (footer.length) {
+        if ($('div[class^="InternalViewerFooter_footer__wrapper__"]').length) {
+            const footer = $('div[class^="InternalViewerFooter_footer__wrapper__"]:first').attr('class')
+            $('head').append(`<style type="text/css">
+                .${footer} {
+                  grid-template-areas: "left center right rright";
+                  grid-template-columns: auto 1fr auto auto;
+                }
+            </style>`)
 
-          $('head').append(`<style type="text/css">
-              .${footer.attr('class')} {
-                grid-template-areas: "left center right rright";
-                grid-template-columns: auto 1fr auto auto;
-              }
-          </style>`)
-
-          checkAndLoad()
-          $(document).on('click', checkAndLoad)
-          setDownloaderBusy()
-          setText('Initializing...')
-          try {
-            await initialize()
-            initRange()
-            setDownloaderReady()
-          } catch (err) {
-            setDownloaderReady('Initialization failed!')
+            checkAndLoad()
+            $(document).on('click', checkAndLoad)
+            setDownloaderBusy()
+            setText('Initializing...')
+            try {
+              await initialize()
+              initRange()
+              setDownloaderReady()
+            } catch (err) {
+              setDownloaderReady('Initialization failed!')
+            }
+            break
+          } else {
+            await delay(500)
           }
-          break
-        } else {
-          await delay(500)
         }
-      }
     })()
 
     async function downloadAsZip(metadata, pageFrom, pageTo) {
