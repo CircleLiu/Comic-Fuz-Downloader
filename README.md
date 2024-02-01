@@ -21,6 +21,10 @@
 
 ## 变更日志
 
+### 0.4.10 (2024/02/01)
+
+- Merge [PR](https://github.com/CircleLiu/Comic-Fuz-Downloader/pull/11) to support new reader UI
+
 ### 0.4.9 (2023/06/26)
 
 #### Enhancement
