@@ -192,12 +192,24 @@
     const divDownload = $(`
       <div id="downloader"></div>
     `)
-    divDownload.css({
-      'margin-left': '24px',
-      flex: '1 1',
-      color: '#2c3438',
-      width: 'fit-content',
-    })
+    const path = new URL(window.location.href).pathname.split('/')
+    const is_manga = (path[path.length - 3].toLowerCase()) === 'manga'
+    if (is_manga) {
+      divDownload.css({
+        "grid-area": 'rright',
+        display: 'flex',
+        "align-items": 'center',
+        gap: '24px',
+        color: '#929ea5',
+      })
+    } else {
+      divDownload.css({
+        'margin-left': '24px',
+        flex: '1 1',
+        color: '#2c3438',
+        width: 'fit-content',
+      })
+    }
 
     const spanDownloadButton = $(`
       <span id="downloadButton">
@@ -290,20 +302,37 @@
 
     function checkAndLoad() {
       if ($('#downloader').length === 0) {
-        $('div[class^="ViewerFooter_footer__buttons__"]:first').append(divDownload)
+        if (is_manga) {
+          $('div[class^="InternalViewerFooter_footer__wrapper__"]:first').append(divDownload)
+        } else {
+          $('div[class^="ViewerFooter_footer__buttons__"]:first').append(divDownload)
+        }
       }
     }
 
     const maxRetry = 10
     ;(async () => {
       for (let i = 0; i < maxRetry; ++i) {
-        if ($('div[class^="ViewerFooter_footer__"]').length) {
-          const zoomContainer = $('div[class^="ViewerFooter_footer__zoomContainer__"]:first').attr('class')
-          $('head').append(`<style type="text/css">
-              .${zoomContainer} {
-                flex: 0 1 270px;
-              }
-            </style>`)
+        const old_ui = !is_manga && $('div[class^="ViewerFooter_footer__"]').length
+        const new_ui = is_manga && $('div[class^="InternalViewerFooter_footer__wrapper__"]').length
+        if (old_ui || new_ui) {
+
+          if (old_ui) {
+            const zoomContainer = $('div[class^="ViewerFooter_footer__zoomContainer__"]:first').attr('class')
+            $('head').append(`<style type="text/css">
+                .${zoomContainer} {
+                  flex: 0 1 270px;
+                }
+              </style>`)
+          } else {
+            const footer = $('div[class^="InternalViewerFooter_footer__wrapper__"]:first').attr('class')
+            $('head').append(`<style type="text/css">
+                .${footer} {
+                  grid-template-areas: "left center right rright";
+                  grid-template-columns: auto 1fr auto auto;
+                }
+              </style>`)
+          }
 
           checkAndLoad()
           $(document).on('click', checkAndLoad)
