@@ -321,8 +321,7 @@
             const zoomContainer = $('div[class^="ViewerFooter_footer__zoomContainer__"]:first').attr('class')
             $('head').append(`<style type="text/css">
                 .${zoomContainer} {
-                  grid-template-areas: "left center right rright";
-                  grid-template-columns: auto 1fr auto auto;
+                  flex: 0 1 270px;
                 }
               </style>`)
           } else {
