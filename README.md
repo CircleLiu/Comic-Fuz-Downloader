@@ -1,3 +1,14 @@
+# ⚠️ DEPRECATED ⚠️
+
+**注意：** 由于目标网页已更新，此仓库中的脚本已不再有效。此项目将不再维护，并且即将被归档。感谢所有的贡献者和用户。
+
+---
+
+**Notice:** Due to updates to the target webpage, the scripts in this repository are no longer functional. This project will no longer be maintained and will soon be archived. Thank you to all contributors and users.
+
+---
+
+
 [English](./README_en.md)
 
 # Comic Fuz Downloader
